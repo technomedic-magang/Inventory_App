@@ -2,27 +2,17 @@
   var tabel = null;
   $(document).ready(function() {
     tabel = $('#datatable-main').DataTable({
-      "language": {
-        url: '<?= base_url() ?>dist/libs/DataTables/id.json',
-      },
-      "autoWidth": false,
+      "language": { url: '<?= base_url() ?>dist/libs/DataTables/id.json' },
       "processing": true,
-      "responsive": true,
       "serverSide": true,
       "ordering": true,
-      "order": [
-        [2, 'asc'] // Urutkan berdasarkan Kode Barang (Kolom ke-3)
-      ],
+      "order": [[2, 'asc']], // Urutkan berdasarkan Kode Asset
       "ajax": {
-          // HAPUS site_url(), cukup pakai $this->uri langsung
-          "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
-          "type": "POST"
+        "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
+        "type": "POST"
       },
       "deferRender": true,
-      "aLengthMenu": _datatableLengthMenu, // Pakai variabel global template jika ada
-      "pageLength": 500,
       "columns": [
-        // --- KOLOM 0: NOMOR URUT ---
         {
           "data": "<?= $this->pk_id ?>",
           "sortable": false,
@@ -30,54 +20,39 @@
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
-        // --- KOLOM 1: TOMBOL AKSI ---
         {
           "data": "<?= $this->pk_id ?>",
-          "className": "text-left",
           "sortable": false,
+          "className": "text-center",
           "render": function(data, type, row, meta) {
             var uri_edit = '<?= $this->uri . '/form_modal/' ?>' + data;
             var uri_delete = '<?= $this->uri . '/delete/' ?>' + data;
-            return '' +
-              '<div class="btn-list btn-sm flex-nowrap">' +
-              '  <div class="dropdown"> ' +
-              '     <button class="btn btn-outline-primary btn-sm dropdown-toggle align-text-top" data-bs-toggle="dropdown">' +
-              '          Aksi' +
-              '     </button>' +
-              '     <div class="dropdown-menu">' +
-              '      <a class="dropdown-item p-1" href="javascript:void(0)" onclick="_modal(event, {uri: \'' + uri_edit + '\', size: \'modal-lg\', position: \'normal\'})">' +
-              '          <?= _icon('edit') ?> Ubah' +
-              '      </a>' +
-              '      <a class="dropdown-item p-1 text-danger" href="javascript:void(0)" onclick=_delete("' + uri_delete + '")>' +
-              '          <?= _icon('trash') ?> Hapus' +
-              '      </a>' +
-              '   </div>' +
-              ' </div>' +
-              '</div>';
+            return '<div class="dropdown">' +
+                   '<button class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">Aksi</button>' +
+                   '<div class="dropdown-menu">' +
+                   '<a class="dropdown-item" href="javascript:void(0)" onclick="_modal(event, {uri: \'' + uri_edit + '\', size: \'modal-lg\'})"><i class="fas fa-edit me-2"></i> Ubah</a>' +
+                   '<div class="dropdown-divider"></div>' +
+                   '<a class="dropdown-item text-danger" href="javascript:void(0)" onclick=_delete("' + uri_delete + '")><i class="fas fa-trash me-2"></i> Hapus</a>' +
+                   '</div></div>';
           }
         },
-        // --- KOLOM DATA MASTER ASSET ---
-        { "data": "asset_kode", "className": "text-left" },
-        { "data": "asset_nama", "className": "text-left" },
-        { "data": "kategori_nama", "className": "text-left" }, // Dari JOIN
-        { "data": "satuan_nama", "className": "text-center" },  // Dari JOIN
-        { "data": "stok_minimal", "className": "text-center" },
-        // --- KOLOM STATUS AKTIF (Sesuai Referensi) ---
+        // --- SESUAIKAN DENGAN NAMA KOLOM BARU ---
+        { "data": "asset_kd" },
+        { "data": "asset_nm" },
+        { "data": "kategori_nm" },      // Dari JOIN
+        { "data": "satuan_nm" },        // Dari JOIN
+        { 
+            "data": "stok_min_qty",     // Nama baru untuk stok minimal
+            "className": "text-end",    // Rata kanan untuk angka
+            "render": $.fn.dataTable.render.number('.', ',', 0) // Format angka (opsional)
+        },
         {
-          "data": "active_st",
-          "className": "text-center",
-          "render": function(data, type, row, meta) {
-            // Fungsi ifNull() mungkin bawaan template, kalau error hapus saja
-            // var data = ifNull(data); 
-            var result = data;
-            if (row['active_st'] == 1) {
-              result = '<i class="fas fa-check-circle text-success" title="Aktif"></i>';
-            } else {
-              result = '<i class="fas fa-times-circle text-danger" title="Non-Aktif"></i>';
+            "data": "active_st",
+            "className": "text-center",
+            "render": function(data) {
+                return (data == 1) ? '<i class="fas fa-check-circle text-success" title="Aktif"></i>' : '<i class="fas fa-times-circle text-danger" title="Non-Aktif"></i>';
             }
-            return result;
-          }
-        },
+        }
       ],
     });
   });

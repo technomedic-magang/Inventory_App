@@ -9,14 +9,12 @@ class Master_asset extends MY_Controller
         _models(['master/m_master_asset']);
         $this->table = $this->m_master_asset->table;
         $this->pk_id = $this->m_master_asset->pk_id;
-        // Sesuaikan path ini dengan struktur folder view kamu
-        $this->template = 'master/master_asset/'; 
+        $this->template = 'master/master_asset/';
     }
 
     public function index()
     {
-        $d = [];
-        $this->render($this->template . 'index', $d);
+        $this->render($this->template . 'index');
     }
 
     public function form_modal($id = null)
@@ -24,9 +22,9 @@ class Master_asset extends MY_Controller
         $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
         $d['form_act'] = $this->uri . '/save/' . $id;
 
-        // Ambil data untuk dropdown
-        $d['list_kategori'] = $this->db->where('deleted_st', 0)->get('mst_kategori')->result_array();
-        $d['list_satuan']   = $this->db->where('deleted_st', 0)->get('mst_satuan')->result_array();
+        // Ambil data dropdown (filter hanya yang aktif & tidak terhapus)
+        $d['list_kategori'] = $this->db->where(['deleted_st' => 0, 'active_st' => 1])->get('mst_kategori')->result_array();
+        $d['list_satuan']   = $this->db->where(['deleted_st' => 0, 'active_st' => 1])->get('mst_satuan')->result_array();
 
         $this->render($this->template . 'form_modal', $d);
     }
@@ -34,26 +32,30 @@ class Master_asset extends MY_Controller
     public function save($id = null)
     {
         $d = _post();
+        
         if ($id == null) {
-            // Jika SKU kosong, generate otomatis
-            if (empty($d['asset_kode'])) {
+            // --- LOGIKA AUTO-GENERATE SKU ---
+            // Jika user tidak mengisi asset_kd, kita buatkan otomatis
+            if (empty($d['asset_kd'])) {
                 $prefix = $this->m_master_asset->get_kategori_prefix($d['kategori_id']);
                 if ($prefix) {
-                    $d['asset_kode'] = $this->m_master_asset->get_next_sku($prefix);
+                    $d['asset_kd'] = $this->m_master_asset->get_next_sku($prefix);
                 } else {
-                    // Fallback jika kategori tak punya prefix
-                    $d['asset_kode'] = 'BRG-' . strtoupper(substr(uniqid(), -5)); 
+                    // Fallback jika kategori tidak punya kode
+                    $d['asset_kd'] = 'BRG-' . date('ymdHis'); 
                 }
             }
+            // Default nilai wajib TMFW saat insert
             $d['deleted_st'] = 0;
-        }
+            // $d['created_by'] = $this->session->userdata('user_id'); // Aktifkan jika sudah login beneran
 
-        $w = ($id != '' ? [$this->pk_id => $id] : null);
-
-        if ($id == null) {
             DB::insert($this->table, $d);
             _json(_response('01', $this->uri));
         } else {
+            // Saat update, jangan lupa set updated_at/by (biasanya otomatis oleh DB trigger, tapi aman diset juga)
+            // $d['updated_by'] = $this->session->userdata('user_id');
+            
+            $w = [$this->pk_id => $id];
             DB::update($this->table, $d, $w);
             _json(_response('02', $this->uri));
         }
@@ -61,8 +63,9 @@ class Master_asset extends MY_Controller
 
     public function delete($id = null)
     {
-        $w = ($id != '' ? [$this->pk_id => $id] : null);
-        DB::update($this->table, ['deleted_st' => 1], $w);
+        $w = [$this->pk_id => $id];
+        // Soft delete standar TMFW
+        DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
         _json(_response('03', $this->uri));
     }
 
@@ -71,7 +74,7 @@ class Master_asset extends MY_Controller
         $this->m_master_asset->load_datatables();
     }
 
-    // API untuk dipanggil via AJAX dari form_modal
+    // --- API AJAX untuk Form Modal ---
     public function get_sku_ajax()
     {
         $kategori_id = $this->input->post('kategori_id');

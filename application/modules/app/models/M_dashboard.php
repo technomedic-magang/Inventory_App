@@ -2,33 +2,66 @@
 
 class M_dashboard extends CI_Model
 {
-  function pegawai_get()
-  {
-    $sql = "SELECT 
-              a.*,
-              b.jabatan_nm,
-              c.divisi_nm,
-              d.pendidikan_nm
-            FROM mst_pegawai a
-            LEFT JOIN mst_jabatan b ON a.jabatan_id = b.jabatan_id
-            LEFT JOIN mst_divisi c ON a.divisi_id = c.divisi_id
-            LEFT JOIN mst_pendidikan d ON a.pendidikan_id = d.pendidikan_id
-            WHERE a.pegawai_id = ?";
-    $query = $this->db->query($sql, array(_ses_get('pegawai_id')));
-    $res = $query->row_array();
-    return $res;
-  }
+    // --- [BAGIAN 1] Data Pegawai (Warisan Sistem Lama) ---
+    function pegawai_get()
+    {
+        $sql = "SELECT a.* FROM mst_pegawai a WHERE a.pegawai_id = ?";
+        $id = _ses_get('pegawai_id') ? _ses_get('pegawai_id') : _ses_get('user_id');
+        return $this->db->query($sql, array($id))->row_array();
+    }
 
-  function magang_get()
-  {
-    $sql = "SELECT 
-              a.*,
-              b.sekolah_nm
-            FROM mst_magang a
-            LEFT JOIN mst_sekolah b ON a.sekolah_id = b.sekolah_id
-            WHERE a.magang_id = ?";
-    $query = $this->db->query($sql, array(_ses_get('magang_id')));
-    $res = $query->row_array();
-    return $res;
-  }
+    // --- [BAGIAN 2] Data Ringkasan Inventaris ---
+    public function count_total_asset_types()
+    {
+        return $this->db->where(['deleted_st' => 0, 'active_st' => 1])->count_all_results('mst_asset');
+    }
+
+    public function sum_total_stok()
+    {
+        $query = $this->db->select_sum('stok_qty')->get('dat_stok');
+        return (int) $query->row()->stok_qty;
+    }
+
+    public function sum_sedang_dipinjam()
+    {
+        // Hitung barang yang masih berstatus dipinjam (belum kembali)
+        $this->db->select('SUM(pinjam_qty - kembali_qty) as sisa_pinjam');
+        $this->db->where('pinjam_qty > kembali_qty');
+        $query = $this->db->get('trx_pinjam_detail');
+        return (int) $query->row()->sisa_pinjam;
+    }
+
+    public function get_low_stock_items()
+    {
+        // Ambil 5 barang dengan stok di bawah minimal
+        $sql = "SELECT a.asset_nm, a.asset_kd, a.stok_min_qty, SUM(s.stok_qty) as total_current
+                FROM mst_asset a
+                LEFT JOIN dat_stok s ON a.asset_id = s.asset_id
+                WHERE a.deleted_st = 0 AND a.active_st = 1
+                GROUP BY a.asset_id
+                HAVING total_current <= a.stok_min_qty
+                ORDER BY total_current ASC
+                LIMIT 5";
+        return $this->db->query($sql)->result_array();
+    }
+
+    // --- [BAGIAN 3] Log Aktivitas Gabungan (UNION ALL) ---
+    public function get_recent_activities()
+    {
+        // Menggabungkan 4 tabel transaksi menjadi satu timeline aktivitas
+        $query = "
+            (SELECT created_at as tgl, transaksi_no as ref, 'Barang Masuk' as tipe, 'primary' as warna FROM trx_masuk WHERE deleted_st = 0)
+            UNION ALL
+            (SELECT created_at as tgl, transaksi_no as ref, 'Barang Keluar (Disposal)' as tipe, 'danger' as warna FROM trx_keluar WHERE deleted_st = 0)
+            UNION ALL
+            (SELECT created_at as tgl, transaksi_no as ref, 'Peminjaman' as tipe, 'warning' as warna FROM trx_pinjam WHERE deleted_st = 0)
+            UNION ALL
+            (SELECT created_at as tgl, transaksi_no as ref, 'Pengembalian' as tipe, 'success' as warna FROM trx_kembali WHERE deleted_st = 0)
+            
+            ORDER BY tgl DESC
+            LIMIT 10
+        ";
+        return $this->db->query($query)->result_array();
+    }
+    
 }
