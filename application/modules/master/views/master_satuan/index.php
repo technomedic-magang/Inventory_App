@@ -28,7 +28,7 @@
                                     <th width="5%">No</th>
                                     <th width="10%">Aksi</th>
                                     <th>Nama Satuan</th>
-                                    <th class="text-center" width="10%">Status</th>
+                                    <th>Deskripsi</th> <th class="text-center" width="10%">Status</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>

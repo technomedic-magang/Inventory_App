@@ -27,6 +27,9 @@ class Master_satuan extends MY_Controller
     public function save($id = null)
     {
         $d = _post();
+        
+        // Data 'deskripsi' otomatis terambil oleh _post() karena ada di form_modal.php
+        
         $w = ($id != '' ? [$this->pk_id => $id] : null);
 
         if ($id == null) {
@@ -49,5 +52,13 @@ class Master_satuan extends MY_Controller
     public function ajax_datatables()
     {
         $this->m_master_satuan->load_datatables();
+    }
+    
+    // ✅ FUNGSI BARU: Untuk mengambil data satuan, termasuk deskripsi, saat tombol ubah ditekan
+    public function get_by_id($id = null)
+    {
+        $data = DB::get($this->table, [$this->pk_id => $id]);
+        // Pastikan kolom deskripsi ada di hasil query
+        _json($data);
     }
 }

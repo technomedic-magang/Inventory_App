@@ -8,6 +8,12 @@
         </div>
 
         <div class="mb-1 row">
+            <label class="col-lg-3 col-md-6 col-form-label">Deskripsi</label>
+            <div class="col-lg-8 col-md-6">
+                <input type="text" name="deskripsi" class="form-control" value="<?= @$main['deskripsi'] ?>" placeholder="Penjelasan detail tentang satuan">
+            </div>
+        </div>
+        <div class="mb-1 row">
             <label class="col-lg-3 col-md-6 col-form-label">Status</label>
             <div class="col-lg-8 col-md-6">
                 <label class="form-check form-check-inline">

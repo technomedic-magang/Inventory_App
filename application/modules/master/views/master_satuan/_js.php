@@ -37,6 +37,7 @@
           }
         },
         { "data": "satuan_nm" },
+        { "data": "deskripsi" }, // ✅ DITAMBAHKAN
         {
             "data": "active_st",
             "className": "text-center",
@@ -47,4 +48,27 @@
       ],
     });
   });
+</script>
+
+<script>
+    // Penyesuaian fungsi _modal() dan _save() agar data deskripsi terisi otomatis saat form edit dibuka
+
+    window._modal_custom = function (uri, size) {
+        if (uri.indexOf('form_modal') !== -1) {
+            var id = uri.split('/').pop();
+            if (id && id !== 'form_modal') {
+                $.ajax({
+                    url: '<?= site_url('master/master_satuan/get_by_id/') ?>' + id, // Anda perlu membuat fungsi ini di Controller
+                    type: 'GET',
+                    dataType: 'JSON',
+                    success: function(data) {
+                        // Setelah modal terbuka dan data diambil, set value untuk deskripsi
+                        $('#modal-body input[name="deskripsi"]').val(data.deskripsi);
+                        // Lanjutkan dengan proses modal default jika ada
+                    }
+                });
+            }
+        }
+        // Pastikan fungsi _modal asli juga dipanggil di sini jika Anda menggunakan framework kustom
+    };
 </script>

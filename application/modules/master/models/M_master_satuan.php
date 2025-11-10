@@ -7,8 +7,9 @@ class M_master_satuan extends CI_Model
 
     public function load_datatables()
     {
-        $query = "SELECT * FROM $this->table";
-        $search = ['satuan_nm']; // Hanya cari berdasarkan nama satuan
+        // Pastikan kolom deskripsi ditambahkan di sini agar DataTables bisa mengambilnya
+        $query = "SELECT satuan_id, satuan_nm, deskripsi, active_st, deleted_st FROM $this->table";
+        $search = ['satuan_nm', 'deskripsi']; // Cari berdasarkan nama satuan dan deskripsi
         $where  = ['deleted_st' => 0];
         $isWhere = null;
 
