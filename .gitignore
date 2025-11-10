@@ -1,0 +1,203 @@
+# Entry Point
+/index.php
+
+# Mac OS
+.DS_Store
+
+# Log
+application/logs/*.*
+!application/logs/index.html
+
+application/cache/*.*
+!application/cache/index.html
+
+# Temporary
+tmp/*
+!tmp/index.html
+captcha/*
+!captcha/index.html
+
+# Config
+# application/config/database.php
+# application/config/mongo_db.php
+# application/config/config.php
+
+# Assets
+assets/users/*
+!assets/users/index.html
+!assets/users/no-photo.png
+
+assets/antrean_farmasi/*
+!assets/antrean_farmasi/index.html
+
+assets/pegawai/*
+!assets/pegawai/index.html
+
+assets/pdf_eklaim/*
+!assets/pdf_eklaim/index.html
+
+assets/tmp_file/*
+!assets/tmp_file/index.html
+
+assets/video_pasien/*
+!assets/video_pasien/index.html
+
+assets/videos/*
+!assets/videos/index.html
+
+assets/ocr/*
+!assets/ocr/index.html
+
+assets/ipsrs/*
+!assets/ipsrs/index.html
+
+assets/hasil_ekg/*
+!assets/hasil_ekg/index.html
+
+assets/qrcode/*
+!assets/qrcode/index.html
+
+assets/barcode/*
+!assets/barcode/index.html
+
+# System
+master_dokumen/*
+!master_dokumen/index.html
+!master_dokumen/testing_asesmen.doc
+
+# Internal Tester
+# application/modules/z/*
+
+# Database
+database/*.*
+
+# Cache
+application/cache/*
+
+# manifest_asset
+assets/manifest_asset/android/*
+!assets/manifest_asset/android/index.html
+assets/manifest_asset/ios/*
+!assets/manifest_asset/ios/index.html
+
+# ttd file
+assets/ttd/*
+!assets/ttd/index.html
+
+# klaim
+assets/klaim/*.*
+!assets/klaim/index.html
+
+# klaim
+assets/klaim/*.*
+!assets/klaim/index.html
+
+assets/klaim_rajal/*.*
+!assets/klaim_rajal/index.html
+assets/klaim_ranap/*.*
+!assets/klaim_ranap/index.html
+
+# vscode
+.vscode/*.*
+assets/logo/*.*
+!assets/logo/index.html
+
+#pks / data
+pks/data
+
+# barcode ibs
+assets/barcode_ibs/*
+!assets/barcode_ibs/index.html
+
+assets/dokumen_upload/*.*
+!assets/dokumen_upload/index.html
+application/libraries/mpdf/examples/*.*
+dist/libs/jquery-validation/demo/cinema/*.*
+application/libraries/mpdf/examples/bayeux1.jpg
+application/libraries/mpdf/examples/borders2FF.jpg
+application/libraries/mpdf/examples/borders2IE.jpg
+application/libraries/mpdf/examples/borders3FF.jpg
+application/libraries/mpdf/examples/borders3IE.jpg
+application/libraries/mpdf/examples/borders4FF.jpg
+application/libraries/mpdf/examples/borders4IE.jpg
+application/libraries/mpdf/examples/bordersFF.jpg
+application/libraries/mpdf/examples/bordersIE.jpg
+application/libraries/mpdf/examples/bordersMPDF2.jpg
+application/libraries/mpdf/examples/clematis.jpg
+application/libraries/mpdf/examples/klematis.jpg
+application/libraries/mpdf/examples/quran282.jpg
+application/libraries/mpdf/examples/sunset.jpg
+application/libraries/mpdf/examples/tiger300px72dpi.jpg
+application/libraries/mpdf/examples/tiger300px96dpi.jpg
+application/libraries/mpdf/examples/tiger300px300dpi.jpg
+dist/libs/jquery-validation/demo/cinema/plan_9.jpg
+dist/libs/jquery-validation/demo/cinema/refer_madness.jpg
+dist/libs/jquery-validation/demo/cinema/saucer_men.jpg
+application/libraries/mpdf/examples/bayeux1.jpg
+application/libraries/mpdf/examples/borders2FF.jpg
+application/libraries/mpdf/examples/borders2IE.jpg
+application/libraries/mpdf/examples/borders3FF.jpg
+application/libraries/mpdf/examples/borders3IE.jpg
+application/libraries/mpdf/examples/borders4FF.jpg
+application/libraries/mpdf/examples/borders4IE.jpg
+application/libraries/mpdf/examples/bordersFF.jpg
+application/libraries/mpdf/examples/bordersIE.jpg
+application/libraries/mpdf/examples/bordersMPDF2.jpg
+application/libraries/mpdf/examples/clematis.jpg
+application/libraries/mpdf/examples/klematis.jpg
+application/libraries/mpdf/examples/quran282.jpg
+application/libraries/mpdf/examples/sunset.jpg
+application/libraries/mpdf/examples/tiger300px72dpi.jpg
+application/libraries/mpdf/examples/tiger300px96dpi.jpg
+application/libraries/mpdf/examples/tiger300px300dpi.jpg
+dist/libs/jquery-validation/demo/cinema/plan_9.jpg
+dist/libs/jquery-validation/demo/cinema/refer_madness.jpg
+dist/libs/jquery-validation/demo/cinema/saucer_men.jpg
+application/libraries/mpdf/examples/borders2FF.jpg
+application/libraries/mpdf/examples/bayeux1.jpg
+application/libraries/mpdf/examples/borders2IE.jpg
+application/libraries/mpdf/examples/borders3FF.jpg
+application/libraries/mpdf/examples/borders3IE.jpg
+application/libraries/mpdf/examples/borders4FF.jpg
+application/libraries/mpdf/examples/borders4IE.jpg
+application/libraries/mpdf/examples/bordersFF.jpg
+application/libraries/mpdf/examples/bordersIE.jpg
+application/libraries/mpdf/examples/bordersMPDF2.jpg
+application/libraries/mpdf/examples/clematis.jpg
+application/libraries/mpdf/examples/klematis.jpg
+application/libraries/mpdf/examples/quran282.jpg
+application/libraries/mpdf/examples/sunset.jpg
+application/libraries/mpdf/examples/tiger300px72dpi.jpg
+application/libraries/mpdf/examples/tiger300px96dpi.jpg
+application/libraries/mpdf/examples/tiger300px300dpi.jpg
+dist/libs/jquery-validation/demo/cinema/plan_9.jpg
+dist/libs/jquery-validation/demo/cinema/refer_madness.jpg
+dist/libs/jquery-validation/demo/cinema/saucer_men.jpg
+application/libraries/mpdf/examples/bayeux1.jpg
+application/libraries/mpdf/examples/borders2FF.jpg
+application/libraries/mpdf/examples/borders2IE.jpg
+application/libraries/mpdf/examples/borders3FF.jpg
+application/libraries/mpdf/examples/borders3IE.jpg
+application/libraries/mpdf/examples/borders4FF.jpg
+application/libraries/mpdf/examples/borders4IE.jpg
+application/libraries/mpdf/examples/bordersFF.jpg
+application/libraries/mpdf/examples/bordersIE.jpg
+application/libraries/mpdf/examples/bordersMPDF2.jpg
+application/libraries/mpdf/examples/clematis.jpg
+application/libraries/mpdf/examples/klematis.jpg
+application/libraries/mpdf/examples/quran282.jpg
+application/libraries/mpdf/examples/tiger300px72dpi.jpg
+application/libraries/mpdf/examples/tiger300px96dpi.jpg
+application/libraries/mpdf/examples/tiger300px300dpi.jpg
+dist/libs/jquery-validation/demo/cinema/plan_9.jpg
+dist/libs/jquery-validation/demo/cinema/refer_madness.jpg
+dist/libs/jquery-validation/demo/cinema/saucer_men.jpg
+
+# Assets
+assets/lembur/*.*
+assets/magang/*.*
+assets/insiden/*.*
+assets/kehadiran/*.*
+
+#
+tester/*.*
