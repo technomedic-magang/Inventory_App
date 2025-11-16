@@ -16,13 +16,13 @@ class M_dashboard extends CI_Model
         return (int) $query->row()->stok_qty;
     }
 
-    // 3. Hitung Barang Sedang Dipinjam
-    public function sum_sedang_dipinjam()
+    // 3. Hitung Barang Sedang Dipakai
+    public function sum_sedang_dipakai()
     {
-        $this->db->select('SUM(pinjam_qty - kembali_qty) as sisa_pinjam');
-        $this->db->where('pinjam_qty > kembali_qty');
-        $query = $this->db->get('trx_pinjam_detail');
-        return (int) $query->row()->sisa_pinjam;
+        $this->db->select('SUM(pakai_qty - kembali_qty) as sisa_pakai');
+        $this->db->where('pakai_qty > kembali_qty');
+        $query = $this->db->get('trx_pakai_detail');
+        return (int) $query->row()->sisa_pakai;
     }
 
     // 4. Ambil Daftar Barang Stok Menipis (Limit 5)
@@ -42,7 +42,7 @@ class M_dashboard extends CI_Model
     // 5. Ambil 5 Transaksi Terakhir (Activity Feed)
     public function get_recent_activities()
     {
-        // Contoh: mengambil 5 transaksi masuk terakhir
+        // mengambil 5 transaksi masuk terakhir
         return $this->db->select('t.transaksi_tgl, t.transaksi_no, g.gudang_nm, "IN" as tipe')
                         ->from('trx_masuk t')
                         ->join('mst_gudang g', 't.gudang_id = g.gudang_id', 'left')

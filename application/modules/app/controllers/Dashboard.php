@@ -24,7 +24,7 @@ class Dashboard extends MY_Controller
         // 3. Data Dashboard Inventaris
         $d['total_types']    = $this->m_dashboard->count_total_asset_types();
         $d['total_items']    = $this->m_dashboard->sum_total_stok();
-        $d['total_borrowed'] = $this->m_dashboard->sum_sedang_dipinjam();
+        $d['total_borrowed'] = $this->m_dashboard->sum_sedang_dipakai();
         $d['low_stock']      = $this->m_dashboard->get_low_stock_items();
         $d['recent_trx']     = $this->m_dashboard->get_recent_activities();
 

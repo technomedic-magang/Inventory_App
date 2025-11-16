@@ -6,16 +6,16 @@ class Dashboard extends MY_Controller
     public function __construct()
     {
         parent::__construct();
-        // UBAH PATH MODEL KE FOLDER DASHBOARD
+        // PATH MODEL FOLDER DASHBOARD
         _models(['dashboard/m_dashboard']);
-        
-        // UBAH PATH VIEW KE FOLDER DASHBOARD
+
+        // PATH VIEW FOLDER DASHBOARD
         $this->template = 'dashboard/dashboard/';
     }
 
     public function index()
     {
-        // Siapkan data untuk view
+        // data view
         $d['total_types']   = $this->m_dashboard->count_total_asset_types();
         $d['total_items']   = $this->m_dashboard->sum_total_stok();
         $d['total_borrowed']= $this->m_dashboard->sum_sedang_dipinjam();

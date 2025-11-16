@@ -4,6 +4,7 @@
     "nsulistiyawan/bpjs": "^1.2",
     "nullpunkt/lz-string-php": "^1.3",
     "thiagoalessio/tesseract_ocr": "^2.12",
-    "jurosh/pdf-merge": "^2.1"
+    "jurosh/pdf-merge": "^2.1",
+    "dompdf/dompdf": "^3.1"
   }
 }

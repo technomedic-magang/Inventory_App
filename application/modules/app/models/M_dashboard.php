@@ -22,13 +22,13 @@ class M_dashboard extends CI_Model
         return (int) $query->row()->stok_qty;
     }
 
-    public function sum_sedang_dipinjam()
+    public function sum_sedang_dipakai()
     {
-        // Hitung barang yang masih berstatus dipinjam (belum kembali)
-        $this->db->select('SUM(pinjam_qty - kembali_qty) as sisa_pinjam');
-        $this->db->where('pinjam_qty > kembali_qty');
-        $query = $this->db->get('trx_pinjam_detail');
-        return (int) $query->row()->sisa_pinjam;
+        // Hitung barang yang masih berstatus dipakai (belum kembali)
+        $this->db->select('SUM(pakai_qty - kembali_qty) as sisa_pakai');
+        $this->db->where('pakai_qty > kembali_qty');
+        $query = $this->db->get('trx_pakai_detail');
+        return (int) $query->row()->sisa_pakai;
     }
 
     public function get_low_stock_items()
@@ -54,7 +54,7 @@ class M_dashboard extends CI_Model
             UNION ALL
             (SELECT created_at as tgl, transaksi_no as ref, 'Barang Keluar (Disposal)' as tipe, 'danger' as warna FROM trx_keluar WHERE deleted_st = 0)
             UNION ALL
-            (SELECT created_at as tgl, transaksi_no as ref, 'Peminjaman' as tipe, 'warning' as warna FROM trx_pinjam WHERE deleted_st = 0)
+            (SELECT created_at as tgl, transaksi_no as ref, 'Pemakaian' as tipe, 'warning' as warna FROM trx_pakai WHERE deleted_st = 0)
             UNION ALL
             (SELECT created_at as tgl, transaksi_no as ref, 'Pengembalian' as tipe, 'success' as warna FROM trx_kembali WHERE deleted_st = 0)
             

@@ -40,7 +40,7 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
-                                <div class="subheader">Sedang Dipinjam</div>
+                                <div class="subheader">Sedang Dipakai</div>
                             </div>
                             <div class="h1 mb-3 text-warning"><?= number_format($total_borrowed) ?> Unit</div>
                         </div>
