@@ -35,7 +35,10 @@
                       <th>Penanggung Jawab</th>
                       <th>Jabatan</th>
                       <th>Lokasi</th>
-                      <th class="text-center">Tgl Pembelian</th>
+                      
+                      <th class="text-center">Bulan Beli</th>
+                      <th class="text-center">Tahun Beli</th>
+                      
                       <th>Keterangan</th>
                       <th class="text-center">QR Code</th>
                     </tr>

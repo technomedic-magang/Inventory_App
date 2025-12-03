@@ -32,8 +32,12 @@
                       <th>Nama Barang</th>
                       <th>Merek & Tipe</th>
                       <th class="text-center">Kondisi</th>
-                      <th class="text-center">Tgl Pembelian</th>
-                      <th>Keterangan</th> <th class="text-center">QR Code</th>
+                      
+                      <th class="text-center">Bulan Beli</th>
+                      <th class="text-center">Tahun Beli</th>
+                      
+                      <th>Keterangan</th> 
+                      <th class="text-center">QR Code</th>
                     </tr>
                   </thead>
                   <tbody></tbody>

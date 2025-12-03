@@ -1,17 +1,6 @@
 <script type="text/javascript">
   var tabel = null;
 
-  // Helper Format Tanggal Indonesia (dd/mm/yyyy)
-  function formatTglIndo(rawDate) {
-      if(!rawDate || rawDate === '0000-00-00') return '-';
-      var date = new Date(rawDate);
-      if (isNaN(date.getTime())) return rawDate; 
-      var day = String(date.getDate()).padStart(2, '0');
-      var month = String(date.getMonth() + 1).padStart(2, '0');
-      var year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-  }
-
   $(document).ready(function() {
     tabel = $('#datatable-main').DataTable({
       "language": { url: '<?= base_url() ?>dist/libs/DataTables/id.json' },
@@ -19,17 +8,17 @@
       "processing": true,
       "serverSide": true,
       "ordering": true,
-      "order": [[1, 'asc']], // Default urut berdasarkan Kode Barang
+      "order": [[1, 'asc']], 
       "scrollX": true, 
       "ajax": {
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
         "type": "POST"
       },
       "deferRender": true,
-      "aLengthMenu": _datatableLengthMenu, // Global variable biasanya didefinisikan di template utama
-      "pageLength": 500,
+      "aLengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+      "pageLength": 10,
       "columns": [
-        // 0. NO (Nomor Urut)
+        // 0. No
         {
           "data": "<?= $this->pk_id ?>",
           "sortable": false,
@@ -38,8 +27,7 @@
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
-        
-        // 1. Kode Barang (Link ke Detail Modal)
+        // 1. Kode Barang
         { 
             "data": "asset_kd", 
             "className": "text-left fw-bold",
@@ -48,58 +36,61 @@
                  return `<a href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_detail}', size: 'modal-lg'})" class="text-primary text-decoration-none" title="Lihat Detail">${data}</a>`;
             }
         },
-        
         // 2. Kategori
         { "data": "kategori_nm", "className": "text-left" },
-        
         // 3. Nama Barang
         { "data": "asset_nm", "className": "text-left" },
-        
-        // 4. Merek/Spek (Custom Attribute)
+        // 4. Merek/Spek
         { "data": "merek_spek", "className": "text-left", "render": function(d){ return d || '-'; } },
-        
-        // 5. Kondisi (Badge Warna)
+        // 5. Kondisi
         {
           "data": "asset_kondisi",
           "className": "text-center",
           "render": function(data) {
             var color = (data == 'BAIK') ? 'success' : (data == 'RUSAK') ? 'danger' : 'warning';
+            if (data == 'RUSAK BERAT') color = 'danger';
             return `<span class="badge bg-${color}-lt">${data}</span>`;
           }
         },
+        // 6. Ruangan
+        { "data": "ruangan", "className": "text-left fw-bold", "render": function(d){ return d || '-'; } },
+        // 7. Lantai
+        { "data": "lantai", "className": "text-left", "render": function(d){ return d || '-'; } },
 
-        // 6. Ruangan (Custom Attribute)
-        { "data": "ruangan", "className": "text-left fw-bold" },
-
-        // 7. Lantai (Custom Attribute)
-        { "data": "lantai", "className": "text-left" },
-
-        // 8. Tgl Pembelian (Format Indonesia)
+        // 8. KOLOM BULAN BELI
         { 
-            "data": "tgl_pembelian_kustom", 
+            "data": "asset_bln_beli", 
             "className": "text-center",
             "render": function(data) {
-                return formatTglIndo(data);
+                var namaBulan = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                // ParseInt untuk memastikan tipe data angka
+                var idx = parseInt(data);
+                return (idx && namaBulan[idx]) ? namaBulan[idx] : '-';
+            }
+        },
+
+        // 9. KOLOM TAHUN BELI
+        { 
+            "data": "asset_thn_beli", 
+            "className": "text-center",
+            "render": function(data) {
+                return data || '-';
             }
         },
         
-        // 9. Keterangan
+        // 10. Keterangan
         { "data": "asset_ket", "className": "text-left", "render": function(d){ return d || '-'; } },
 
-        // 10. QR Code Generator
+        // 11. QR Code
         { 
             "data": "asset_kd", 
             "className": "text-center",
             "sortable": false,
             "render": function(data, type, row) {
                 var d = row;
-                var tgl = formatTglIndo(d.tgl_pembelian_kustom);
                 var lokasi = (d.ruangan || '') + ' ' + (d.lantai || '');
-                
-                // Format String QR: SKU@NAMA@MEREK@LOKASI
                 var qrString = `${d.asset_kd}@${d.asset_nm}@${d.merek_spek}@${lokasi}`;
-                
-                // Menggunakan API internal/eksternal untuk generate QR
                 var baseUrl = "http://e-bphtb.kebumenkab.go.id/index.php/api_qrcode/index?text=";
                 var finalUrl = baseUrl + encodeURIComponent(qrString);
 

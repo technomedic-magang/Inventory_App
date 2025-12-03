@@ -1,7 +1,6 @@
 <script type="text/javascript">
   var tabel = null;
 
-  // Helper Format Tanggal
   function formatTglIndo(rawDate) {
       if(!rawDate || rawDate === '0000-00-00') return '-';
       var date = new Date(rawDate);
@@ -29,7 +28,6 @@
       "aLengthMenu": _datatableLengthMenu,
       "pageLength": 500,
       "columns": [
-        // 0. NO
         {
           "data": "<?= $this->pk_id ?>",
           "sortable": false,
@@ -38,8 +36,6 @@
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
-        
-        // 1. Kode Barang (Link ke Detail)
         { 
             "data": "asset_kd", 
             "className": "text-left fw-bold",
@@ -48,17 +44,9 @@
                  return `<a href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_detail}', size: 'modal-lg'})" class="text-primary text-decoration-none" title="Lihat Detail">${data}</a>`;
             }
         },
-        
-        // 2. Kategori
         { "data": "kategori_nm", "className": "text-left" },
-        
-        // 3. Nama Barang
         { "data": "asset_nm", "className": "text-left" },
-        
-        // 4. Merek & Tipe
         { "data": "merek_tipe", "className": "text-left", "render": function(d){ return d || '-'; } },
-        
-        // 5. Kondisi
         {
           "data": "asset_kondisi",
           "className": "text-center",
@@ -67,38 +55,39 @@
             return `<span class="badge bg-${color}-lt">${data}</span>`;
           }
         },
-
-        // 6. [BARU] Penanggung Jawab
         { "data": "penanggungjawab", "className": "text-left fw-bold" },
-        
-        // 7. [BARU] Jabatan
         { "data": "jabatan", "className": "text-left small text-muted" },
-
-        // 8. [BARU] Lokasi
         { "data": "lokasi", "className": "text-left" },
 
-        // 9. Tgl Pembelian
+        // [FIX] KOLOM BULAN BELI
         { 
-            "data": "tgl_pembelian_kustom", 
+            "data": "asset_bln_beli", 
             "className": "text-center",
             "render": function(data) {
-                return formatTglIndo(data);
+                var namaBulan = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                var idx = parseInt(data);
+                return (idx && namaBulan[idx]) ? namaBulan[idx] : '-';
+            }
+        },
+
+        // [FIX] KOLOM TAHUN BELI
+        { 
+            "data": "asset_thn_beli", 
+            "className": "text-center",
+            "render": function(data) {
+                return data || '-';
             }
         },
         
-        // 10. Keterangan
         { "data": "asset_ket", "className": "text-left", "render": function(d){ return d || '-'; } },
 
-        // 11. QR Code
         { 
             "data": "asset_kd", 
             "className": "text-center",
             "sortable": false,
             "render": function(data, type, row) {
-                var d = row;
-                var tgl = formatTglIndo(d.tgl_pembelian_kustom);
-                // SKU@KATEGORI@NAMA@MEREK@LOKASI@PENANGGUNGJAWAB
-                var qrString = `${d.asset_kd}@${d.kategori_nm}@${d.asset_nm}@${d.merek_tipe}@${d.lokasi}@${d.penanggungjawab}`;
+                var qrString = `${row.asset_kd}@${row.kategori_nm}@${row.asset_nm}@${row.merek_tipe}@${row.lokasi}@${row.penanggungjawab}`;
                 var baseUrl = "http://e-bphtb.kebumenkab.go.id/index.php/api_qrcode/index?text=";
                 var finalUrl = baseUrl + encodeURIComponent(qrString);
 

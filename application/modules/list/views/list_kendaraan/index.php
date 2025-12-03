@@ -36,7 +36,10 @@
                       <th>Seri</th>
                       <th>Warna</th>
                       <th class="text-primary">No. Polisi</th>
-                      <th class="text-left">Tahun</th>
+                      
+                      <th class="text-center">Bulan Beli</th>
+                      <th class="text-center">Tahun Beli</th>
+                      
                       <th class="text-center">Kondisi</th>
                       <th>Service Terakhir</th>
                       <th>Pajak</th>
