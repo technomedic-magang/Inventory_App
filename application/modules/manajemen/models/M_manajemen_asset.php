@@ -14,6 +14,13 @@ class M_manajemen_asset extends CI_Model
                   
         $search = ['a.asset_kd', 'a.asset_nm', 'k.kategori_nm'];
         $where  = ['a.deleted_st' => 0];
+
+        // [UPDATE] Filter Data Berdasarkan Kategori
+        $filter_kategori = $this->input->post('filter_kategori');
+        if (!empty($filter_kategori)) {
+            $where['a.kategori_id'] = $filter_kategori;
+        }
+
         $isWhere = null;
         DB::datatables_query($query, $search, $where, $isWhere);
     }
@@ -27,7 +34,7 @@ class M_manajemen_asset extends CI_Model
         return ($query->num_rows() > 0) ? $query->row()->kategori_kd : null;
     }
 
-    // --- [REVISI LOGIKA] Generate SKU dengan NOMOR URUT PER GRUP KATEGORI ---
+    // Generate SKU dengan NOMOR URUT PER GRUP KATEGORI
     public function get_next_full_sku($kategori_id, $kd_singkat, $tahun, $bulan)
     {
         // 1. Ambil Kode Kategori (e.g., "K2")
@@ -63,18 +70,14 @@ class M_manajemen_asset extends CI_Model
         // 6. Hitung nomor baru
         $new_num = $last_num + 1;
 
-        // --- [LOGIKA IF-ELSE ANDA DIMASUKKAN DI SINI] ---
         $padding_length = 0;
         
         // Cek apakah kategori saat ini termasuk grup "Gedung" atau "Kendaraan"
         if (in_array($kategori_kd, ['GG', 'GDG', 'K2', 'K4'])) {
-            // Jika YA, padding 3 digit (001)
             $padding_length = 3;
         } else {
-            // Jika TIDAK (Elektronik, Aksesoris, dll), padding 4 digit (0001)
             $padding_length = 4;
         }
-        // ----------------------------------------------------
 
         // 7. Kembalikan kode lengkap dengan padding dinamis
         return $prefix_fleksibel . str_pad($new_num, $padding_length, '0', STR_PAD_LEFT);

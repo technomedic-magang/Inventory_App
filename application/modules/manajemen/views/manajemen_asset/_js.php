@@ -12,10 +12,14 @@
       "ordering": true,
       "order": [
         [2, 'asc']
-      ], // Urutkan berdasarkan Kode Asset (kolom ke-3)
+      ], 
       "ajax": {
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
-        "type": "POST"
+        "type": "POST",
+        // [UPDATE] Kirim data filter ke server
+        "data": function(data) {
+            data.filter_kategori = $('#filter_kategori').val();
+        }
       },
       "deferRender": true,
       "aLengthMenu": _datatableLengthMenu,
@@ -32,7 +36,6 @@
           "className": "text-left",
           "sortable": false,
           "render": function(data, type, row, meta) {
-            // [FIX] Aksi 100% mirip Parameter
             var uri_edit = '<?= $this->uri . '/form_modal/' ?>' + data;
             var uri_delete = '<?= $this->uri . '/delete/' ?>' + data;
             return '' +
@@ -71,14 +74,13 @@
         },
         {
           "data": "stok_min_qty",
-          "className": "text-left", // Ganti ke text-left (rata kiri)
+          "className": "text-left",
           "render": $.fn.dataTable.render.number('.', ',', 0)
         },
         {
           "data": "active_st",
           "className": "text-center",
           "render": function(data, type, row, meta) {
-            // [FIX] Render status 100% mirip Parameter
             var data = ifNull(data); 
             var result = data;
             if (row['active_st'] == 1) {
@@ -91,6 +93,10 @@
         },
       ],
     });
-    // tabel.draw();
+    
+    // [UPDATE] Event listener jika filter berubah
+    $('#filter_kategori').change(function() {
+        tabel.ajax.reload();
+    });
   });
 </script>

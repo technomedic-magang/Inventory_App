@@ -14,7 +14,13 @@ class Manajemen_asset extends MY_Controller
 
     public function index()
     {
-        $this->render($this->template . 'index');
+        // [FIX] Ambil data kategori agar dropdown di view tidak kosong
+        $d['list_kategori'] = $this->db->where('deleted_st', 0)
+                                       ->order_by('kategori_nm', 'ASC')
+                                       ->get('mst_kategori')
+                                       ->result_array();
+        // Kirim variabel $d ke view
+        $this->render($this->template . 'index', $d);
     }
 
     public function form_modal($id = null)
