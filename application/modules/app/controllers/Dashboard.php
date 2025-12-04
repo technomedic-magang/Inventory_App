@@ -1,33 +1,32 @@
 <?php
-defined('BASEPATH') or exit('No direct script access allowed');
+defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Dashboard extends MY_Controller
-{
-    public function __construct()
-    {
+class Dashboard extends MY_Controller {
+
+    public function __construct() {
         parent::__construct();
-        _models(['app/m_dashboard']);
-        $this->template = 'app/dashboard/';
+        $this->load->model('M_dashboard');
     }
 
-    public function index()
-    {
-        // 1. Data Umum
-        $d['tahun']     = date('Y');
-        $d['bulan']     = date('m');
-        $d['tgl_awal']  = date('Y-m-01');
-        $d['tgl_total'] = date('t', strtotime($d['tgl_awal']));
+    public function index() {
+        // 1. Statistik Kartu
+        $data['stats'] = $this->M_dashboard->get_summary_stats();
 
-        // 2. Data Pegawai
-        $d['pegawai'] = $this->m_dashboard->pegawai_get();
+        // 2. Stok Menipis
+        $data['low_stock'] = $this->M_dashboard->get_low_stock_persediaan();
 
-        // 3. Data Dashboard Inventaris
-        $d['total_types']    = $this->m_dashboard->count_total_asset_types();
-        $d['total_items']    = $this->m_dashboard->sum_total_stok();
-        $d['total_borrowed'] = $this->m_dashboard->sum_sedang_dipakai();
-        $d['low_stock']      = $this->m_dashboard->get_low_stock_items();
-        $d['recent_trx']     = $this->m_dashboard->get_recent_activities();
+        // 3. Riwayat Aktivitas (Tabel Baru)
+        $data['riwayat'] = $this->M_dashboard->get_riwayat_gabungan();
 
-        $this->render($this->template . 'index_pegawai', $d);
+        // 4. Top Barang (Info Tambahan)
+        $data['top_barang'] = $this->M_dashboard->get_top_barang_keluar();
+
+        // 5. Data Chart
+        $data['chart_data'] = $this->M_dashboard->get_monthly_chart();
+
+        $this->title = "Dashboard Utama";
+        $this->nav['nav_nm'] = "Ringkasan Sistem";
+
+        $this->render('dashboard/index_pegawai', $data);
     }
 }
