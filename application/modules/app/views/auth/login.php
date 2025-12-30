@@ -7,11 +7,8 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
   <title>Masuk | <?= $identitas['aplikasi_singkatan'] . ' - ' . $identitas['perusahaan_nm'] ?></title>
   <link rel="shortcut icon" href="<?= $identitas['logo'] ?>" type="image/x-icon">
-  <!-- Toast -->
   <link href="<?= base_url() ?>dist/libs/jquery-toast/jquery-toast.min.css" rel="stylesheet" />
-  <!-- Fontawesome -->
   <link href="<?= base_url() ?>dist/libs/fontawesome/css/all.css" rel="stylesheet" />
-  <!-- CSS files -->
   <link href="<?= base_url() ?>dist/css/tabler.min.css?1684106062" rel="stylesheet" />
   <link href="<?= base_url() ?>dist/css/itm.css?<?= time() ?>" rel="stylesheet" />
   <link rel="shortcut icon" href="<?= $identitas['logo'] ?>" type="image/x-icon">
@@ -37,6 +34,7 @@
       font-feature-settings: "cv03", "cv04", "cv11";
     }
 
+    /* Background Image dipertahankan */
     .bg-img {
       background: url("<?= $identitas['background'] ?>") no-repeat center center fixed;
       -webkit-background-size: cover;
@@ -49,106 +47,140 @@
       width: 100% !important;
     }
 
-    @media screen and (max-width: 820px) {
-      #informasi {
-        visibility: hidden;
-        display: none;
-      }
+    /* --- GAYA BARU UNTUK DESAIN MODERN --- */
 
-      #login {
-        padding: 0px !important;
+    /* Warna latar belakang biru gelap untuk kolom kiri */
+    .bg-brand {
+        background-color: #1e3a8a; /* Sesuaikan warna ini jika ingin lebih gelap/terang */
+        color: white;
+    }
+
+    /* Membuat kartu login lebih lebar untuk menampung dua kolom */
+    .login-container {
+        max-width: 900px !important;
+        width: 100%;
+    }
+
+    /* Memastikan sudut kartu melengkung bagus dan overflow hidden agar warna biru tidak keluar */
+    .card-login-modern {
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important;
+        border: none;
+    }
+
+    /* Styling untuk teks branding di kiri */
+    .brand-title {
+        font-weight: 700;
+        font-size: 2rem;
         margin-top: 1rem;
-      }
+    }
+    .brand-subtitle {
+        font-weight: 600;
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+    .brand-tagline {
+        font-size: 0.8rem;
+        opacity: 0.7;
+        margin-top: 2rem;
+    }
 
-      #auth {
-        margin-top: 4rem;
-        max-width: 400px;
-      }
-
-      #title {
-        text-align: center;
-      }
+    /* Penyesuaian padding pada layar kecil */
+    @media screen and (max-width: 768px) {
+        .login-container {
+            max-width: 450px !important;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        /* Pada layar kecil, kolom branding di kiri mungkin perlu padding lebih kecil saat ditumpuk */
+        .col-brand {
+            padding: 2rem !important;
+        }
     }
   </style>
-  <!-- Libs JS -->
-  <!-- JQuery -->
   <script src="<?= base_url() ?>dist/libs/jquery/jquery.min.js"></script>
-  <!-- JQuery Validation -->
   <script src="<?= base_url() ?>dist/libs/jquery-validation/dist/jquery.validate.min.js"></script>
   <script src="<?= base_url() ?>dist/libs/jquery-validation/dist/localization/messages_id.min.js"></script>
-  <!-- Toast -->
   <script src="<?= base_url() ?>dist/libs/jquery-toast/jquery.toast.min.js"></script>
-  <!-- Tabler Core -->
   <script src="<?= base_url() ?>dist/js/tabler.min.js?1684106062" defer></script>
   <script src="<?= base_url() ?>dist/js/demo.min.js?1684106062" defer></script>
 </head>
 
 <body class="d-flex flex-column">
   <div class="flash-error" data-flasherror="<?= $this->session->flashdata('flash_error') ?>"></div>
-  <div class="page page-center bg-img">
-    <div id="header_container" class="container mb-2 mt-4" style="max-width: 1028px;">
-      <div class="row">
-        <div class="col-lg-1 col-md-2 text-center">
-          <a href="." class="navbar-brand navbar-brand-autodark"><img src="<?= $identitas['logo'] ?>" height="60" alt=""></a>
-        </div>
-        <div id="title" class="col">
-          <h2 class="p-0 m-0"><?= $identitas['aplikasi_nm'] ?></h2>
-          <h2 class="p-0 m-0"><?= $identitas['perusahaan_nm'] ?></h2>
-        </div>
-      </div>
-    </div>
-    <div id="auth" class="container" style="max-width: 400px;">
-      <div class="card py-3">
-        <div class="card-body">
-          <div class="row">
-            <div id="login" class="col-lg-12">
-              <div class="text-center mb-3">
-                <i class="fas fa-user-shield fa-4x text-primary"></i>
-              </div>
-              <h2 class="h2 text-center mb-2">Akses Pengguna</h2>
-              <form id="form" action="<?= site_url() . '/app/auth/login_action' ?>" method="post" autocomplete="off" novalidate>
-                <div class="input-group mb-2 mt-4">
-                  <span class="input-group-text"><i class="fas fa-user"></i></span>
-                  <input class="form-control" type="text" id="u" name="u" placeholder="Nama Pengguna" autocomplete="off" required>
-                </div>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                  <input class="form-control" type="password" id="p" name="p" placeholder="Kata Sandi" autocomplete="off" required>
-                  <span class="input-group-text">
-                    <a href="#" onclick="showPassword()" id="show_password" class="link-secondary">
-                      <i class="fas fa-eye"></i>
-                    </a>
-                  </span>
-                </div>
-                <div class="mt-2">
-                  <div class="row">
-                    <div class="col-7">
-                      <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-th"></i></span>
-                        <input class="form-control" type="number" id="c" name="c" placeholder="Captcha" autocomplete="off" required>
-                        <input type="hidden" id="t" name="t" value="<?= md5(date('YmdH')) ?>">
-                        <span class="input-group-text">
-                          <a href="#" onclick="getCaptcha()" class="link-secondary">
-                            <i class="fas fa-sync"></i>
-                          </a>
-                        </span>
-                      </div>
-                    </div>
-                    <div class="col-5" id="divCaptcha">
 
-                    </div>
-                  </div>
-                </div>
-                <div class="form-footer mt-2">
-                  <button class="btn btn-primary btn-submit w-100" type="submit">Masuk</button>
-                </div>
-              </form>
+  <div class="page page-center bg-img">
+
+    <div class="container login-container py-4">
+      <div class="card card-login-modern">
+        <div class="row g-0">
+
+          <div class="col-md-6 bg-brand d-flex flex-column justify-content-center align-items-center text-center p-5 col-brand">
+            <div class="mb-3">
+                <img src="<?= $identitas['logo'] ?>" height="80" alt="Logo">
+            </div>
+            <h1 class="brand-title mb-0"><?= $identitas['aplikasi_singkatan'] ?></h1>
+            <h2 class="brand-subtitle mb-0">ENTERPRISE RESOURCE PLANNING</h2>
+            <h3 class="brand-subtitle mt-2"><?= $identitas['perusahaan_nm'] ?></h3>
+
+            <div class="brand-tagline">
+                Sistem Informasi Terintegrasi<br>
+                Aman • Cepat • Modern
             </div>
           </div>
+
+          <div class="col-md-6 p-4 p-md-5 bg-white">
+            <div class="text-center mb-3">
+                <i class="fas fa-user-shield fa-3x text-primary"></i>
+            </div>
+            <h2 class="h2 text-center mb-1">Autentikasi</h2>
+            <p class="text-muted text-center mb-4">Silakan masuk dengan akun Anda</p>
+
+            <form id="form" action="<?= site_url() . '/app/auth/login_action' ?>" method="post" autocomplete="off" novalidate>
+              <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input class="form-control" type="text" id="u" name="u" placeholder="Nama Pengguna" autocomplete="off" required>
+              </div>
+              <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                <input class="form-control" type="password" id="p" name="p" placeholder="Kata Sandi" autocomplete="off" required>
+                <span class="input-group-text">
+                  <a href="#" onclick="showPassword()" id="show_password" class="link-secondary">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </span>
+              </div>
+              <div class="mt-3 mb-3">
+                <div class="row">
+                  <div class="col-7">
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="fas fa-th"></i></span>
+                      <input class="form-control" type="number" id="c" name="c" placeholder="Captcha" autocomplete="off" required>
+                      <input type="hidden" id="t" name="t" value="<?= md5(date('YmdH')) ?>">
+                      <span class="input-group-text">
+                        <a href="#" onclick="getCaptcha()" class="link-secondary">
+                          <i class="fas fa-sync"></i>
+                        </a>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="col-5" id="divCaptcha">
+                    </div>
+                </div>
+              </div>
+              <div class="form-footer mt-4">
+                <button class="btn btn-primary btn-submit w-100 py-2" type="submit">
+                    <i class="fas fa-sign-in-alt me-2"></i> Masuk
+                </button>
+              </div>
+            </form>
+            </div>
         </div>
       </div>
     </div>
   </div>
+
   <script>
     $(document).ready(function() {
       // Generate Captcha

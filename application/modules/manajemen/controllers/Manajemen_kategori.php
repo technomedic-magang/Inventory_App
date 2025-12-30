@@ -17,7 +17,7 @@ class Manajemen_kategori extends MY_Controller
         $this->render($this->template . 'index');
     }
 
-    // [DISEDERHANAKAN] form_modal tidak perlu load 'list_atribut' lagi
+    // form_modal tidak perlu load 'list_atribut' lagi
     public function form_modal($id = null)
     {
         $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
@@ -25,8 +25,6 @@ class Manajemen_kategori extends MY_Controller
         $this->render($this->template . 'form_modal', $d);
     }
 
-    // --- [LOGIKA SAVE DISEREDERHANAKAN] ---
-    // Fungsi ini HANYA menyimpan data Kategori saja.
     public function save($id = null)
     {
         $d = _post();
@@ -48,9 +46,7 @@ class Manajemen_kategori extends MY_Controller
             $data_kategori['updated_by'] = 'PEGAWAI TESTER';
             DB::update($this->table, $data_kategori, $w);
         }
-        
-        // Bagian yang menghapus/menyimpan atribut kustom SUDAH DIHAPUS.
-        
+       
         _json(_response('01', $this->uri));
     }
 

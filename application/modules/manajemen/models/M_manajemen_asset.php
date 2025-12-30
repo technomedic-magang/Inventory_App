@@ -7,6 +7,7 @@ class M_manajemen_asset extends CI_Model
 
     public function load_datatables()
     {
+        // [UPDATE] Tambahkan select beli_nominal (Harga)
         $query = "SELECT a.*, k.kategori_nm, s.satuan_nm 
                   FROM mst_asset a 
                   LEFT JOIN mst_kategori k ON a.kategori_id = k.kategori_id 
@@ -14,51 +15,49 @@ class M_manajemen_asset extends CI_Model
                   
         $search = ['a.asset_kd', 'a.asset_nm', 'k.kategori_nm'];
         $where  = ['a.deleted_st' => 0];
+
+        // Filter Data Berdasarkan Kategori
+        $filter_kategori = $this->input->post('filter_kategori');
+        if (!empty($filter_kategori)) {
+            $where['a.kategori_id'] = $filter_kategori;
+        }
+
         $isWhere = null;
         DB::datatables_query($query, $search, $where, $isWhere);
     }
 
-    // Fungsi helper ambil KODE KATEGORI (misal: GG, K2, K4)
+    // Fungsi helper dan generate SKU (Tetap Gunakan Kode Lama Anda)
     public function get_kategori_prefix($kategori_id)
     {
-        $this->db->select('kategori_kd');
-        $this->db->where('kategori_id', $kategori_id);
-        $query = $this->db->get('mst_kategori');
-        return ($query->num_rows() > 0) ? $query->row()->kategori_kd : null;
+        $q = $this->db->select('kategori_kd')->where('kategori_id', $kategori_id)->get('mst_kategori');
+        return ($q->num_rows() > 0) ? $q->row()->kategori_kd : null;
     }
 
-    // --- [MESIN BARU] Generate SKU Lengkap (ITM-K2-MT-2014.10.001) ---
     public function get_next_full_sku($kategori_id, $kd_singkat, $tahun, $bulan)
     {
-        // 1. Ambil Kode Kategori
         $kategori_kd = $this->get_kategori_prefix($kategori_id);
-        if (empty($kategori_kd) || empty($kd_singkat) || empty($tahun) || empty($bulan)) {
-            return "Lengkapi 4 Field SKU";
+        if (empty($kategori_id) || empty($kategori_kd) || empty($kd_singkat) || empty($tahun) || empty($bulan)) {
+            return "Lengkapi Data";
         }
 
-        // 2. Format Bulan (misal: 9 -> 09)
         $bln = str_pad($bulan, 2, '0', STR_PAD_LEFT);
-        
-        // 3. Buat Prefix Pencarian (cth: "ITM-K2-MT-2014.10.")
-        $prefix = "ITM-$kategori_kd-$kd_singkat-$tahun.$bln.";
+        $prefix_fleksibel = "ITM-$kategori_kd-$kd_singkat-$tahun.$bln.";
 
-        // 4. Cari nomor urut terakhir di database
-        $this->db->select('asset_kd');
-        $this->db->from($this->table);
-        $this->db->like('asset_kd', $prefix, 'after');
-        $this->db->order_by('asset_kd', 'DESC');
-        $this->db->limit(1);
+        // Logic grup kategori (Sesuai kode lama)
+        $grup_kategori_kds = [$kategori_kd];
+        if (in_array($kategori_kd, ['K2', 'K4'])) $grup_kategori_kds = ['K2', 'K4'];
+        if (in_array($kategori_kd, ['GG', 'GDG'])) $grup_kategori_kds = ['GG', 'GDG'];
+
+        $this->db->select("MAX(CAST(SUBSTRING_INDEX(a.asset_kd, '.', -1) AS UNSIGNED)) as max_num");
+        $this->db->from("mst_asset a");
+        $this->db->join("mst_kategori k", "a.kategori_id = k.kategori_id");
+        $this->db->where_in('k.kategori_kd', $grup_kategori_kds); 
         $query = $this->db->get();
+        $last_num = $query->row() ? $query->row()->max_num : 0;
 
-        if ($query->num_rows() > 0) {
-            $last_kode = $query->row()->asset_kd;
-            $last_num = (int) substr($last_kode, -3);
-            $new_num = $last_num + 1;
-        } else {
-            $new_num = 1;
-        }
+        $new_num = $last_num + 1;
+        $padding_length = in_array($kategori_kd, ['GG', 'GDG', 'K2', 'K4']) ? 3 : 4;
 
-        // 5. Kembalikan kode lengkap
-        return $prefix . str_pad($new_num, 3, '0', STR_PAD_LEFT);
+        return $prefix_fleksibel . str_pad($new_num, $padding_length, '0', STR_PAD_LEFT);
     }
 }

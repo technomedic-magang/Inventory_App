@@ -17,14 +17,40 @@ class M_pemakaian extends CI_Model
         DB::datatables_query($query, $search, $where, $isWhere);
     }
 
+    // File: application/models/M_pemakaian.php
+
     public function get_assets_available($gudang_id)
     {
         $this->db->select('s.asset_id, s.stok_qty, a.asset_nm, a.asset_kd, sat.satuan_nm');
+        
+        // [MODIFIKASI 1] Tambahkan select untuk 'merek_tipe'
+        $this->db->select('k.kategori_nm as jenis');
+        $this->db->select('v_merk.value_isi as merk');
+        $this->db->select('v_nopol.value_isi as nopol');
+        $this->db->select('v_spek.value_isi as spesifikasi');
+        $this->db->select('v_merek_tipe.value_isi as merek_tipe'); // <--- BARU (Untuk Aksesoris)
+
         $this->db->from('dat_stok s');
         $this->db->join('mst_asset a', 's.asset_id = a.asset_id');
         $this->db->join('mst_kategori k', 'a.kategori_id = k.kategori_id');
         $this->db->join('mst_satuan sat', 'a.satuan_id = sat.satuan_id', 'left');
         
+        // 1. Join Atribut Merk (Standar)
+        $this->db->join('mst_kategori_atribut attr_merk', "attr_merk.kategori_id = a.kategori_id AND attr_merk.atribut_label = 'Merek'", 'left');
+        $this->db->join('dat_asset_value v_merk', 'v_merk.asset_id = a.asset_id AND v_merk.atribut_id = attr_merk.atribut_id', 'left');
+
+        // 2. Join Atribut Nopol (Kendaraan)
+        $this->db->join('mst_kategori_atribut attr_nopol', "attr_nopol.kategori_id = a.kategori_id AND attr_nopol.atribut_label LIKE '%Polisi%'", 'left');
+        $this->db->join('dat_asset_value v_nopol', 'v_nopol.asset_id = a.asset_id AND v_nopol.atribut_id = attr_nopol.atribut_id', 'left');
+
+        // 3. Join Atribut Spesifikasi
+        $this->db->join('mst_kategori_atribut attr_spek', "attr_spek.kategori_id = a.kategori_id AND attr_spek.atribut_label LIKE '%Spesifikasi%'", 'left');
+        $this->db->join('dat_asset_value v_spek', 'v_spek.asset_id = a.asset_id AND v_spek.atribut_id = attr_spek.atribut_id', 'left');
+        
+        // 4. [MODIFIKASI 2] Join Atribut KHUSUS 'Merek & Tipe' (Sesuai ref M_aksesoris_komputer)
+        $this->db->join('mst_kategori_atribut attr_mt', "attr_mt.kategori_id = a.kategori_id AND attr_mt.atribut_label = 'Merek & Tipe'", 'left');
+        $this->db->join('dat_asset_value v_merek_tipe', 'v_merek_tipe.asset_id = a.asset_id AND v_merek_tipe.atribut_id = attr_mt.atribut_id', 'left');
+
         $this->db->where('s.gudang_id', $gudang_id);
         $this->db->where('s.stok_qty >', 0);
         $this->db->where('k.kategori_tipe', 'ASET');
@@ -34,8 +60,9 @@ class M_pemakaian extends CI_Model
 
     public function get_auto_number($tanggal)
     {
+        // Tanggal wajib format Y-m-d
         $prefix = 'PMK'; 
-        $periode = date('Ym', strtotime($tanggal));
+        $periode = date('Ym', strtotime($tanggal)); 
         $prefix_full = $prefix . '/' . $periode . '/';
 
         $this->db->select_max('transaksi_no');
@@ -47,7 +74,6 @@ class M_pemakaian extends CI_Model
         return $prefix_full . str_pad($urutan, 4, '0', STR_PAD_LEFT);
     }
 
-    // [REVISI] Simpan TANPA LOOPING (Single Item)
     public function simpan_transaksi($data_header, $asset_id, $gudang_id, $qty_pakai)
     {
         $this->db->trans_start();
@@ -56,7 +82,7 @@ class M_pemakaian extends CI_Model
         $this->db->insert($this->table, $data_header);
         $id_header = $this->db->insert_id();
 
-        // 2. Insert Detail (Cuma 1 kali)
+        // 2. Insert Detail
         if (!empty($asset_id) && $qty_pakai > 0) {
             $this->db->insert('trx_pemakaian_detail', [
                 'pemakaian_id'  => $id_header,

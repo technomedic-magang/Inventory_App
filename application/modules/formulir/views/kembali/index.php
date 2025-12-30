@@ -5,16 +5,14 @@
     <div class="container-xl">
       <div class="row align-items-center">
         <div class="col">
-          <div class="page-pretitle">
-            <?= $this->nav['nav_nm'] ?? 'Formulir' ?>
-          </div>
-          <h2 class="page-title">
-            <?= $this->title ?? 'Pengembalian Aset' ?>
-          </h2>
+          <div class="page-pretitle">Formulir</div>
+          <h2 class="page-title">Pengembalian Aset</h2>
         </div>
         <div class="col-auto ms-auto d-print-none">
           <div class="btn-list">
-            <a href="javascript:void(0)" onclick="_modal(event, {uri: '<?= $this->uri . '/form_modal' ?>', size: 'modal-lg', position: 'normal'})" class="btn btn-success d-sm-inline-block">
+            <a href="javascript:void(0)" 
+               onclick="_modal(event, {uri: '<?= site_url("formulir/kembali/form_modal") ?>', size: 'modal-lg', position: 'normal'})" 
+               class="btn btn-success d-sm-inline-block">
                 <i class="fas fa-reply-all"></i> Buat Pengembalian
             </a>
           </div>
@@ -30,12 +28,12 @@
           <div class="card-body p-2">
             <div class="w-100">
               <div class="table-responsive">
-                <table class="table table-vcenter card-table table-striped table-sm display nowrap" id="datatable-main">
+                <table class="table table-vcenter card-table table-striped table-sm text-nowrap" id="datatable-main" width="100%">
                   <thead>
                     <tr>
-                      <th width="20">No</th>
+                      <th width="10">No</th>
                       <th width="40">Aksi</th>
-                      <th class="text-center">Tgl Kembali</th>
+                      <th>Tgl Kembali</th>
                       <th>No. Kembali</th>
                       <th>Ref. Pemakaian</th>
                       <th>Peminjam</th>

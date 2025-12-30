@@ -94,3 +94,4 @@ ERROR - 2025-11-16 02:04:27 --> Query error: You have an error in your SQL synta
             LEFT JOIN dat_stok ds ON a.asset_id = ds.asset_id AND ds.stok_qty > 0
             LEFT JOIN mst_gudang g ON ds.gudang_id = g.gudang_id
          WHERE 1 = 1  AND a.deleted_st='0'
+ERROR - 2025-11-16 18:20:18 --> 404 Page Not Found: ../modules/persediaan/controllers/Persediaan/persediaan_masuk

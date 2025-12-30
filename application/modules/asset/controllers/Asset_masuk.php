@@ -10,6 +10,7 @@ class Asset_masuk extends MY_Controller
         $this->table = $this->m_asset_masuk->table;
         $this->pk_id = $this->m_asset_masuk->pk_id;
         $this->template = 'asset/asset_masuk/';
+        $this->uri_mod = 'asset/asset_masuk'; // Helper URL
     }
 
     public function index()
@@ -20,36 +21,47 @@ class Asset_masuk extends MY_Controller
     public function form_modal($id = null)
     { 
         $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
-        $d['form_act'] = $this->uri . '/save/' . $id;
+        $d['form_act'] = site_url($this->uri_mod . '/save/' . $id);
 
         // Data Gudang
         $d['list_gudang'] = $this->db->where(['deleted_st' => 0, 'active_st' => 1])
                                      ->get('mst_gudang')->result_array();
         
-        // --- [PERBAIKAN LOGIKA DROPDOWN ASET] ---
-        // Hanya tampilkan aset yang BELUM PERNAH ada di tabel trx_masuk_detail
-        
-        // 1. Ambil semua ID aset yang sudah pernah masuk (dan transaksinya aktif)
-        $subquery = $this->db->select('asset_id')
-                             ->from('trx_masuk_detail')
-                             ->get_compiled_select();
+        // Data Kategori
+        $d['list_kategori'] = $this->db->where(['deleted_st' => 0, 'active_st' => 1, 'kategori_tipe' => 'ASET'])
+                                       ->order_by('kategori_nm', 'ASC')
+                                       ->get('mst_kategori')->result_array();
 
-        // 2. Ambil data Master Aset yang ID-nya TIDAK ADA di subquery tadi
-        $this->db->select('a.asset_id, a.asset_kd, a.asset_nm');
-        $this->db->from('mst_asset a');
-        $this->db->join('mst_kategori k', 'a.kategori_id = k.kategori_id', 'left');
-        $this->db->where('a.deleted_st', 0);
-        $this->db->where('k.kategori_tipe', 'ASET'); // Hanya tipe ASET
-        
-        // Filter Kunci: Aset ID tidak boleh ada di daftar yang sudah masuk
-        $this->db->where("a.asset_id NOT IN ($subquery)", NULL, FALSE);
-        
-        $d['list_asset'] = $this->db->get()->result_array();
-        // ----------------------------------------
+        $d['list_asset'] = []; // Kosongkan awal
 
         $this->render($this->template . 'form_modal', $d);
     }
     
+    // [UPDATE] Menggunakan _convert_date agar lebih rapi
+    public function get_no_transaksi_ajax()
+    {
+        $tgl_raw = $this->input->post('tanggal');
+        $asset_id = $this->input->post('asset_id');
+
+        if (empty($tgl_raw) || empty($asset_id)) {
+            echo json_encode(['status' => false, 'transaksi_no' => '']);
+            return;
+        }
+
+        // Gunakan Helper Konversi
+        $tgl_transaksi = $this->_convert_date($tgl_raw);
+
+        $seq_part = $this->m_asset_masuk->get_auto_number($tgl_transaksi);
+        $sku_part = $this->m_asset_masuk->get_sku_by_asset_id($asset_id);
+
+        if ($sku_part) {
+            $final_no = $seq_part . '/' . $sku_part;
+            echo json_encode(['status' => true, 'transaksi_no' => $final_no]);
+        } else {
+            echo json_encode(['status' => false, 'transaksi_no' => 'Error: SKU not found']);
+        }
+    }
+
     public function save($id = null)
     {
         if ($id != null) {
@@ -57,20 +69,20 @@ class Asset_masuk extends MY_Controller
             return;
         }
 
-        // [REVISI] Ambil semua data yang dibutuhkan
-        $tgl_transaksi = $this->input->post('transaksi_tgl');
-        $asset_id      = $this->input->post('asset_id');
-        $detail_ket    = $this->input->post('detail_ket');
+        $tgl_raw    = $this->input->post('transaksi_tgl');
+        $asset_id   = $this->input->post('asset_id');
+        $detail_ket = $this->input->post('detail_ket');
 
-        if (empty($asset_id) || empty($tgl_transaksi)) {
+        if (empty($asset_id) || empty($tgl_raw)) {
              echo json_encode(['status' => '00', 'msg' => 'Gagal, Tanggal dan Aset wajib diisi.']);
              return;
         }
 
-        // [REVISI] Generate nomor transaksi final di server
-        // 1. Dapatkan nomor urut (cth: IN/202511/001)
+        // [UPDATE] Konversi Tanggal Aman
+        $tgl_transaksi = $this->_convert_date($tgl_raw);
+
+        // Generate No Transaksi Ulang (Safety)
         $seq_part = $this->m_asset_masuk->get_auto_number($tgl_transaksi);
-        // 2. Dapatkan SKU (cth: ITM-K2-MT-2014.10.001)
         $sku_part = $this->m_asset_masuk->get_sku_by_asset_id($asset_id);
 
         if (!$sku_part) {
@@ -78,21 +90,53 @@ class Asset_masuk extends MY_Controller
              return;
         }
         
-        // 3. Gabungkan
         $final_transaksi_no = $seq_part . '/' . $sku_part;
 
         $data_header = [
             'gudang_id'     => $this->input->post('gudang_id'),
-            'transaksi_tgl' => $tgl_transaksi,
-            'transaksi_no'  => $final_transaksi_no, // <-- Nomor Baru
+            'transaksi_tgl' => $tgl_transaksi, // Masuk DB format YYYY-MM-DD
+            'transaksi_no'  => $final_transaksi_no,
             'transaksi_ket' => $this->input->post('transaksi_ket'),
             'active_st'     => 1,
             'deleted_st'    => 0,
-            'created_by'    => 'PEGAWAI TESTER'
+            'created_by'    => $this->session->userdata('user_id') ?? 'SYSTEM'
         ];
         
-        if ($this->m_asset_masuk->simpan_transaksi_aset($data_header, $asset_id, $detail_ket)) {
-            _json(_response('01', $this->uri));
+        $this->db->trans_start();
+        
+        // 1. Simpan Transaksi & Update Stok
+        $this->m_asset_masuk->simpan_transaksi_aset($data_header, $asset_id, $detail_ket);
+
+        // 2. Simpan Atribut Kustom (Jika ada form dinamis)
+        $data_kustom = $this->input->post('kustom') ?? [];
+        if (!empty($data_kustom)) {
+            foreach ($data_kustom as $atribut_id => $isi_value) {
+                if (!empty($isi_value)) {
+                    // Cek apakah value sudah ada
+                    $cek = $this->db->get_where('dat_asset_value', [
+                        'asset_id' => $asset_id, 
+                        'atribut_id' => $atribut_id
+                    ])->row();
+
+                    if($cek) {
+                        $this->db->where('value_id', $cek->value_id);
+                        $this->db->update('dat_asset_value', ['value_isi' => $isi_value]);
+                    } else {
+                        $this->db->insert('dat_asset_value', [
+                            'asset_id'   => $asset_id,
+                            'atribut_id' => $atribut_id,
+                            'value_isi'  => $isi_value,
+                            'created_by' => 'SYSTEM'
+                        ]);
+                    }
+                }
+            }
+        }
+        
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === TRUE) {
+            _json(_response('01', site_url($this->uri_mod)));
         } else {
              echo json_encode(['status' => '00', 'msg' => 'Gagal menyimpan transaksi.']);
         }
@@ -102,7 +146,7 @@ class Asset_masuk extends MY_Controller
     {
         $w = [$this->pk_id => $id];
         DB::update($this->table, ['deleted_st' => 1], $w);
-        _json(_response('03', $this->uri));
+        _json(_response('03', site_url($this->uri_mod)));
     }
 
     public function ajax_datatables()
@@ -110,28 +154,44 @@ class Asset_masuk extends MY_Controller
         $this->m_asset_masuk->load_datatables();
     }
 
-    // [REVISI] API AJAX sekarang butuh 2 parameter: Tanggal dan Asset
-    public function get_no_transaksi_ajax()
+    public function get_list_asset_by_kategori()
     {
-        $tgl_transaksi = $this->input->post('tanggal');
-        $asset_id      = $this->input->post('asset_id');
+        $kategori_id = $this->input->post('kategori_id');
+        $data = $this->m_asset_masuk->get_assets_by_kategori_id($kategori_id);
+        echo json_encode($data);
+    }
 
-        // Jika salah satu kosong, jangan generate
-        if (empty($tgl_transaksi) || empty($asset_id)) {
-            echo json_encode(['status' => false, 'transaksi_no' => '']);
-            return;
+    public function get_form_dinamis_by_kategori()
+    {
+        $kategori_kd = $this->input->post('kategori_kd');
+        $kategori = $this->db->get_where('mst_kategori', ['kategori_kd' => $kategori_kd])->row();
+        if (!$kategori) { echo json_encode(['html' => '']); return; }
+
+        $list_atribut = $this->db->where('kategori_id', $kategori->kategori_id)
+                                 ->where_in('atribut_label', ['Ruangan', 'Lantai'])
+                                 ->where('deleted_st', 0)
+                                 ->get('mst_kategori_atribut')->result_array();
+        
+        if (empty($list_atribut)) { echo json_encode(['html' => '']); return; }
+
+        $d['list_atribut'] = $list_atribut;
+        $html = $this->load->view($this->template . '_ajax_form_dinamis', $d, TRUE);
+        echo json_encode(['html' => $html]);
+    }
+
+    // [HELPER KONSISTEN UNTUK TANGGAL]
+    private function _convert_date($date_raw)
+    {
+        if (empty($date_raw)) return date('Y-m-d');
+
+        // Cek format dd-mm-yyyy (dash)
+        if (strpos($date_raw, '-') !== false) {
+            $parts = explode('-', $date_raw);
+            // Jika format 31-12-2025
+            if (count($parts) == 3 && strlen($parts[2]) == 4) {
+                return date('Y-m-d', strtotime($date_raw));
+            }
         }
-
-        // 1. Get sequential part
-        $seq_part = $this->m_asset_masuk->get_auto_number($tgl_transaksi);
-        // 2. Get SKU part
-        $sku_part = $this->m_asset_masuk->get_sku_by_asset_id($asset_id);
-
-        if ($sku_part) {
-            $final_no = $seq_part . '/' . $sku_part;
-            echo json_encode(['status' => true, 'transaksi_no' => $final_no]);
-        } else {
-            echo json_encode(['status' => false, 'transaksi_no' => 'Error: SKU not found']);
-        }
+        return $date_raw;
     }
 }

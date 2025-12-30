@@ -16,10 +16,11 @@ class M_kendaraan extends CI_Model
                 a.active_st,
                 k.kategori_nm,
                 
-                -- 1. Tanggal Default (Bulan/Tahun)
-                CONCAT(LPAD(a.asset_bln_beli, 2, '0'), '/', a.asset_thn_beli) as tgl_beli_default,
+                -- [BARU] Ambil Data Tahun dan Bulan Beli Murni
+                a.asset_thn_beli,
+                a.asset_bln_beli,
 
-                -- 2. Tanggal Custom (Lengkap YYYY-MM-DD)
+                -- Data Lama (Opsional, tetap diambil jika butuh backup)
                 v_tgl.value_isi as tgl_pembuatan_custom,
 
                 v_merek.value_isi as merk,
@@ -37,6 +38,8 @@ class M_kendaraan extends CI_Model
                 END as jabatan,
 
                 COALESCE(DATE_FORMAT(tr_latest.max_tgl, '%d/%m/%Y'), '-') as service_terakhir,
+                
+                -- [PERBAIKAN] Mengambil max(transaksi_tgl) dari trx_pajak
                 COALESCE(DATE_FORMAT(tp_latest.max_tgl, '%d/%m/%Y'), '-') as pajak_kendaraan
 
             FROM mst_asset a
@@ -44,11 +47,9 @@ class M_kendaraan extends CI_Model
             JOIN mst_kategori k ON a.kategori_id = k.kategori_id 
                  AND k.kategori_kd IN ('K2', 'K4')
 
-            -- JOIN Atribut 'Tahun Pembuatan' (Menggunakan LIKE agar lebih fleksibel)
             LEFT JOIN mst_kategori_atribut attr_tgl ON attr_tgl.kategori_id = a.kategori_id AND attr_tgl.atribut_label LIKE '%Tahun%'
             LEFT JOIN dat_asset_value v_tgl ON v_tgl.asset_id = a.asset_id AND v_tgl.atribut_id = attr_tgl.atribut_id
             
-            -- JOIN Lainnya
             LEFT JOIN mst_kategori_atribut attr_merek ON attr_merek.kategori_id = a.kategori_id AND attr_merek.atribut_label = 'Merek'
             LEFT JOIN dat_asset_value v_merek ON v_merek.asset_id = a.asset_id AND v_merek.atribut_id = attr_merek.atribut_id
 
@@ -73,11 +74,13 @@ class M_kendaraan extends CI_Model
             LEFT JOIN mst_gudang g ON ds.gudang_id = g.gudang_id
 
             LEFT JOIN (SELECT asset_id, MAX(tgl_perawatan) as max_tgl FROM trx_perawatan WHERE deleted_st = 0 GROUP BY asset_id) tr_latest ON a.asset_id = tr_latest.asset_id
-            LEFT JOIN (SELECT asset_id, MAX(tgl_jatuh_tempo) as max_tgl FROM trx_pajak WHERE deleted_st = 0 GROUP BY asset_id) tp_latest ON a.asset_id = tp_latest.asset_id
+            
+            -- [PERBAIKAN DISINI: Ganti tgl_jatuh_tempo menjadi transaksi_tgl]
+            LEFT JOIN (SELECT asset_id, MAX(transaksi_tgl) as max_tgl FROM trx_pajak WHERE deleted_st = 0 GROUP BY asset_id) tp_latest ON a.asset_id = tp_latest.asset_id
         ";
 
         $where = ['a.deleted_st' => 0];
-        $search = ['a.asset_kd', 'a.asset_nm', 'v_nopol.value_isi', 'pg.pegawai_nm'];
+        $search = ['a.asset_kd', 'a.asset_nm', 'v_nopol.value_isi', 'pg.pegawai_nm', 'a.asset_thn_beli'];
         $isWhere = null;
 
         DB::datatables_query($query, $search, $where, $isWhere);

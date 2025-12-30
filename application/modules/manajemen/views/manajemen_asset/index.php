@@ -29,6 +29,21 @@
         <div class="card">
           <div class="card-body p-2">
             <div class="w-100">
+
+              <div class="row mb-3">
+                <div class="col-md-4 col-sm-6">
+                  <label class="form-label">Filter Kategori Aset:</label>
+                  <select id="filter_kategori" class="form-select">
+                    <option value="">-- Tampilkan Semua --</option>
+                    <?php if(!empty($list_kategori)): ?>
+                      <?php foreach($list_kategori as $kat): ?>
+                        <option value="<?= $kat['kategori_id'] ?>"><?= $kat['kategori_nm'] ?></option>
+                      <?php endforeach; ?>
+                    <?php endif; ?>
+                  </select>
+                </div>
+              </div>
+
               <div class="table-responsive">
                 <table class="table table-vcenter card-table table-striped table-sm display nowrap" id="datatable-main">
                   <thead>
@@ -38,10 +53,10 @@
                       <th>Kode Asset</th>
                       <th>Nama Asset</th>
                       <th>Kategori</th>
-                      <th>Satuan</th>
-                      <th>Stok Min</th>
-                      <th class="text-center" width="5%">Status</th>
-                    </tr>
+                      <th>Tgl Beli</th>
+                      <th class="text-center">Kondisi</th>
+                      <th class="text-end">Harga Beli</th>
+                      </tr>
                   </thead>
                   <tbody></tbody>
                 </table>

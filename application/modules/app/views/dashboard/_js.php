@@ -1,0 +1,3 @@
+<script>
+    console.log('Dashboard Loaded');
+</script>

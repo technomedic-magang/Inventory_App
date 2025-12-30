@@ -18,6 +18,31 @@ class M_asset_masuk extends CI_Model
         DB::datatables_query($query, $search, $where, $isWhere);
     }
 
+    // [BARU] Ambil aset berdasarkan Kategori (Filter yang belum masuk)
+    public function get_assets_by_kategori_id($kategori_id)
+    {
+        // 1. Ambil ID aset yang SUDAH masuk (untuk di-exclude)
+        $subquery = $this->db->select('asset_id')
+                             ->from('trx_masuk_detail')
+                             ->get_compiled_select();
+
+        // [PERBAIKAN DI SINI]
+        // Tambahkan 'mst_asset.' di depan nama kolom agar tidak ambiguous
+        $this->db->select('mst_asset.asset_id, mst_asset.asset_kd, mst_asset.asset_nm, mst_asset.kategori_id');
+        
+        $this->db->from('mst_asset');
+        // Join Kategori untuk mengambil kodenya (perlu untuk JS nanti)
+        $this->db->join('mst_kategori', 'mst_asset.kategori_id = mst_kategori.kategori_id', 'left');
+        $this->db->select('mst_kategori.kategori_kd'); 
+
+        $this->db->where('mst_asset.deleted_st', 0);
+        // Pastikan where ini juga spesifik (mst_asset.kategori_id)
+        $this->db->where('mst_asset.kategori_id', $kategori_id); 
+        $this->db->where("mst_asset.asset_id NOT IN ($subquery)", NULL, FALSE); 
+        
+        return $this->db->get()->result_array();
+    }
+
     public function simpan_transaksi_aset($data_header, $asset_id, $detail_ket)
     {
         $this->db->trans_start();
@@ -53,7 +78,6 @@ class M_asset_masuk extends CI_Model
         return $this->db->trans_status();
     }
 
-    // --- FUNGSI HELPER 1 (Nomor Urut Bulanan) ---
     public function get_auto_number($tanggal)
     {
         $prefix = 'IN';
@@ -65,14 +89,15 @@ class M_asset_masuk extends CI_Model
         
         $urutan = 1;
         if ($last_no) {
-            // Ambil nomor urut dari format: IN/202511/001/SKU...
             $parts = explode('/', $last_no);
-            $urutan = (int) $parts[2] + 1; // Ambil bagian '001' dan tambah 1
+            // Ambil bagian urutan (index ke-2 dalam format IN/YYYYMM/001/SKU)
+            if(isset($parts[2]) && is_numeric($parts[2])) {
+                $urutan = (int) $parts[2] + 1;
+            }
         }
-        return $prefix_full . str_pad($urutan, 3, '0', STR_PAD_LEFT); // Format 001
+        return $prefix_full . str_pad($urutan, 3, '0', STR_PAD_LEFT);
     }
 
-    // --- FUNGSI HELPER 2 (Ambil SKU) ---
     public function get_sku_by_asset_id($asset_id)
     {
         $this->db->select('asset_kd');

@@ -19,10 +19,10 @@ class M_dashboard extends CI_Model
     // 3. Hitung Barang Sedang Dipakai
     public function sum_sedang_dipakai()
     {
-        $this->db->select('SUM(pakai_qty - kembali_qty) as sisa_pakai');
-        $this->db->where('pakai_qty > kembali_qty');
-        $query = $this->db->get('trx_pakai_detail');
-        return (int) $query->row()->sisa_pakai;
+        $this->db->select('SUM(pemakaian_qty - kembali_qty) as sisa_pemakaian');
+        $this->db->where('pemakaian_qty > kembali_qty');
+        $query = $this->db->get('trx_pemakaian_detail');
+        return (int) $query->row()->sisa_pemakaian;
     }
 
     // 4. Ambil Daftar Barang Stok Menipis (Limit 5)

@@ -37,7 +37,7 @@ class M_gedung extends CI_Model
         ";
 
         $where = [
-            'k.kategori_kd' => 'GG', // Pastikan kode ini benar (GDG/GG)
+            'k.kategori_kd' => 'GG',
             'a.deleted_st'  => 0
         ];
 
