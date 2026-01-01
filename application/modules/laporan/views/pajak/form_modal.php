@@ -1,27 +1,24 @@
 <?php
-// --- 1. PERSIAPAN DATA DI SISI SERVER (PHP) ---
-// Kita olah datanya di PHP dulu biar rapi, lalu di-convert ke JSON untuk Javascript
+// --- 1. PERSIAPAN DATA ---
 $data_assets_js = [];
 
 foreach($list_asset as $row) {
-    // Bersihkan kode aset agar seragam huruf besar
     $kode = strtoupper($row['asset_kd']); 
     
-    // Default Tipe
+    // Logika Deteksi Tipe
     $type = 'LAINNYA';
-
-    // Logika Deteksi (Dilonggarkan: Cukup mengandung 'K2' atau 'K4' dimanapun posisinya)
     if (strpos($kode, 'K2') !== false || strpos($kode, 'K4') !== false) {
         $type = 'KENDARAAN';
-    } 
-    elseif (strpos($kode, 'GG') !== false) {
+    } elseif (strpos($kode, 'GG') !== false) {
         $type = 'BANGUNAN';
     }
+
+    $nopol_fix = !empty($row['nopol_asli']) ? $row['nopol_asli'] : '-';
 
     $data_assets_js[] = [
         'id'    => $row['asset_id'],
         'text'  => $row['asset_nm'],
-        'nopol' => $row['nopol'],
+        'nopol' => $nopol_fix,
         'kode'  => $row['asset_kd'],
         'due'   => $row['tgl_pajak_tahunan'],
         'type'  => $type
@@ -61,14 +58,20 @@ foreach($list_asset as $row) {
             </div>
         </div>
 
-        <div class="row bg-blue-lt border rounded p-2 mb-3 mx-0">
-            <div class="col-6">
-                <small class="text-muted d-block" id="label_identitas">Identitas (Plat/Kode):</small>
-                <span class="fw-bold" id="info_nopol">-</span>
+        <div class="row bg-blue-lt border rounded p-2 mb-3 mx-0 text-center">
+            <div class="col-4 border-end" id="col_info_kode">
+                <small class="text-muted d-block" style="font-size:10px">Kode Aset (ID)</small>
+                <span class="fw-bold d-block text-truncate" id="view_kode">-</span>
             </div>
-            <div class="col-6">
-                <small class="text-muted d-block">Jatuh Tempo Terakhir:</small>
-                <span class="fw-bold text-danger" id="info_due">-</span>
+            
+            <div class="col-4 border-end" id="col_info_nopol">
+                <small class="text-muted d-block" style="font-size:10px">Nomor Polisi</small>
+                <span class="fw-bold d-block text-truncate" id="view_nopol">-</span>
+            </div>
+            
+            <div class="col-4" id="col_info_due">
+                <small class="text-muted d-block" style="font-size:10px">Jatuh Tempo Terakhir</small>
+                <span class="fw-bold text-danger d-block text-truncate" id="view_due">-</span>
             </div>
         </div>
 
@@ -76,7 +79,7 @@ foreach($list_asset as $row) {
             <label class="col-lg-3 col-form-label required">Jenis Pembayaran</label>
             <div class="col-lg-9">
                 <select name="pajak_jenis" id="pajak_jenis" class="form-select" required onchange="toggleFormLogic()">
-                    </select>
+                </select>
                 <small class="text-info" id="hint_jenis">-</small>
             </div>
         </div>
@@ -93,10 +96,7 @@ foreach($list_asset as $row) {
         <div class="mb-2 row">
             <label class="col-lg-3 col-form-label required">Tanggal Bayar</label>
             <div class="col-lg-8 col-md-6">
-                <input type="text" name="transaksi_tgl" id="transaksi_tgl" 
-                    class="form-control datepicker-notauto" 
-                    value="<?= date('d-m-Y') ?>" 
-                    required placeholder="dd-mm-yyyy">
+                <input type="text" name="transaksi_tgl" id="transaksi_tgl" class="form-control datepicker-notauto" value="<?= date('d-m-Y') ?>" required placeholder="dd-mm-yyyy">
             </div>
         </div>
 
@@ -161,8 +161,6 @@ foreach($list_asset as $row) {
     var lastDateValue = '';
 
     $(document).ready(function() {
-        
-        // 1. INIT SELECT2
         $('.select2-modal').select2({
             theme: "bootstrap-5",
             dropdownParent: $('#form').closest('.modal'),
@@ -175,64 +173,62 @@ foreach($list_asset as $row) {
             }
         });
 
-        // 2. INIT RUPIAH
         $('.rupiah').on('keyup', function(){ $(this).val(formatRupiah($(this).val())); });
 
-        // 3. JALANKAN FILTER AWAL
+        // Init Data
         filterAssetByType();
-
-        // 4. JALANKAN WATCHER NOMOR OTOMATIS
         startDateWatcher();
     });
 
-    // --- FUNGSI WATCHER (DIPERBAIKI UNTUK HANDLE FORMAT TANGGAL) ---
     function startDateWatcher() {
         setInterval(function() {
             var tglInput = $('#transaksi_tgl');
             var rawVal = tglInput.val(); 
-            
-            // Validasi: Pastikan nilai ada dan minimal panjangnya 10 (yyyy-mm-dd atau dd-mm-yyyy)
             if (rawVal && rawVal.length >= 10 && rawVal !== lastDateValue) {
                 lastDateValue = rawVal;
-                
-                // Normalisasi Tanggal sebelum dikirim ke Controller
-                // Controller biasanya butuh YYYY-MM-DD untuk SQL, tapi kadang fungsi helper butuh DD-MM-YYYY
-                // Kita kirim apa adanya dulu, biarkan controller yang parsing.
-                
-                // Debugging: Cek nilai yang dikirim di Console Browser
-                console.log("Tanggal berubah:", rawVal);
-
                 $.ajax({ 
                     url: '<?= site_url("laporan/pajak/get_no_transaksi_ajax?n=" . _get("n")) ?>', 
                     type: 'POST', 
                     data: { tanggal: rawVal }, 
                     dataType: 'json',
                     success: function(res) { 
-                        if(res && res.new_no) {
-                            $('#transaksi_no').val(res.new_no);
-                            console.log("Nomor baru:", res.new_no);
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error("Gagal update nomor:", xhr.responseText);
+                        if(res && res.new_no) $('#transaksi_no').val(res.new_no);
                     }
                 });
             }
-        }, 500); // Cek setiap 500ms
+        }, 500);
     }
 
-    // --- FUNGSI FILTER & LAINNYA (TETAP SAMA) ---
+    // --- FUNGSI UTAMA (UPDATED) ---
     function filterAssetByType() {
         var selectedType = $('input[name="tipe_filter"]:checked').val();
-        var $select = $('#asset_id');
         
-        $select.html('<option value="">- Cari Aset -</option>');
+        // 1. LOGIKA UI: Sembunyikan Nopol jika bukan kendaraan
+        if (selectedType === 'KENDARAAN') {
+            // Tampilkan kolom Nopol
+            $('#col_info_nopol').show();
+            // Kembalikan lebar kolom lain ke col-4
+            $('#col_info_kode').removeClass('col-6').addClass('col-4');
+            $('#col_info_due').removeClass('col-6').addClass('col-4');
+        } else {
+            // Sembunyikan kolom Nopol
+            $('#col_info_nopol').hide();
+            // Lebarkan kolom sisa jadi col-6 agar rapi
+            $('#col_info_kode').removeClass('col-4').addClass('col-6');
+            $('#col_info_due').removeClass('col-4').addClass('col-6');
+        }
+
+        // 2. Populate Dropdown Aset
+        var $select = $('#asset_id');
+        $select.empty(); 
+        $select.append(new Option('- Cari Aset -', ''));
 
         var count = 0;
         $.each(allAssets, function(i, item) {
             if(item.type === selectedType) {
                 var label = item.text;
-                if(item.nopol && item.nopol !== '') label += ' [' + item.nopol + ']';
+                // Hanya tampilkan Nopol di label dropdown jika tipe kendaraan
+                if(item.nopol !== '-' && selectedType === 'KENDARAAN') label += ' [' + item.nopol + ']';
                 label += ' (' + item.kode + ')';
 
                 var newOption = new Option(label, item.id, false, false);
@@ -248,57 +244,58 @@ foreach($list_asset as $row) {
         if(count === 0) {
             $select.append(new Option('(Tidak ada data)', '', false, false));
         }
-        $select.trigger('change');
+        $select.trigger('change'); 
+        resetInfoUI(); 
+
+        // 3. Update Jenis Pembayaran
         updatePajakOptions(selectedType);
-        resetInfoUI();
     }
 
     function resetInfoUI() {
-        $('#info_nopol').text('-');
-        $('#info_due').text('-');
+        $('#view_kode').text('-');
+        $('#view_nopol').text('-');
+        $('#view_due').text('-');
         $('#nopol_baru').val('');
         $('#div_nopol_baru').hide();
-        $('#asset_id').val('').trigger('change.select2'); 
     }
 
     function updatePajakOptions(type) {
         var $pajakSelect = $('#pajak_jenis');
-        $pajakSelect.empty();
+        $pajakSelect.empty(); 
 
         if(type === 'KENDARAAN') {
             $pajakSelect.append(new Option('Pajak Tahunan (Ulang STNK)', 'TAHUNAN'));
             $pajakSelect.append(new Option('Pajak 5 Tahunan (Ganti Kaleng)', '5_TAHUNAN'));
-            $('#label_identitas').text('Plat Nomor:');
             $('#hint_jenis').text('Masa berlaku STNK bertambah 1 tahun.');
         } else if(type === 'BANGUNAN') {
             $pajakSelect.append(new Option('Pajak Bumi & Bangunan (PBB)', 'PBB'));
-            $('#label_identitas').text('Kode / NOP:');
             $('#hint_jenis').text('Pembayaran PBB Tahunan.');
         } else {
             $pajakSelect.append(new Option('Pajak Tahunan (Umum)', 'TAHUNAN'));
-            $('#label_identitas').text('Kode Aset:');
             $('#hint_jenis').text('Pembayaran pajak aset umum.');
         }
+        
         toggleFormLogic();
     }
 
     function getAssetInfo() {
         var $opt = $('#asset_id option:selected');
+        
         if(!$opt.val()) {
-             $('#info_nopol').text('-');
-             $('#info_due').text('-');
+             resetInfoUI();
              return;
         }
 
         var nopol = $opt.attr('data-nopol');
-        var due = $opt.attr('data-due');
-        var kode = $opt.attr('data-kode');
+        var due   = $opt.attr('data-due');
+        var kode  = $opt.attr('data-kode');
 
-        if(nopol && nopol !== '' && nopol !== 'null') {
-            $('#info_nopol').text(nopol);
+        $('#view_kode').text(kode ? kode : '-');
+        $('#view_nopol').text(nopol); 
+        
+        if(nopol && nopol !== '-') {
             $('#nopol_baru').val(nopol);
         } else {
-            $('#info_nopol').text(kode);
             $('#nopol_baru').val('');
         }
         
@@ -306,10 +303,10 @@ foreach($list_asset as $row) {
             try {
                 var dateObj = new Date(due);
                 var dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                $('#info_due').text(dateStr);
-            } catch(e) { $('#info_due').text(due); }
+                $('#view_due').text(dateStr);
+            } catch(e) { $('#view_due').text(due); }
         } else {
-            $('#info_due').text('Belum ada riwayat');
+            $('#view_due').text('Belum ada riwayat');
         }
     }
 

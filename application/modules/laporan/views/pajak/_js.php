@@ -8,7 +8,7 @@
       "processing": true,
       "serverSide": true,
       "ordering": true,
-      "order": [ [2, 'desc'] ], // Urut Tgl Bayar Desc
+      "order": [ [2, 'desc'] ], 
       "ajax": {
         "url": "<?= site_url('laporan/pajak/ajax_datatables?n=' . _get('n')) ?>",
         "type": "POST"
@@ -32,7 +32,6 @@
           "className": "text-center",
           "render": function(data, type, row, meta) {
             var uri_delete = '<?= site_url("laporan/pajak/delete/") ?>' + data;
-            // Tombol hapus (Soft Delete)
             return `<a class="text-danger" href="javascript:void(0)" onclick="_delete('${uri_delete}')" title="Hapus Riwayat">
                       <i class="fas fa-trash"></i>
                     </a>`;
@@ -55,8 +54,18 @@
                         <div class="small text-muted">${row.asset_nm}</div>`;
             }
         },
-        // 4. PLAT NOMOR
-        { "data": "nopol_baru", "className": "fw-bold text-center" },
+        
+        // --- [PERBAIKAN DISINI] ---
+        // 4. PLAT NOMOR (Mengambil alias 'plat_nomor' dari Model)
+        { 
+            "data": "plat_nomor", 
+            "className": "fw-bold text-center",
+            "render": function(data) {
+                // Tampilkan data (Nopol Master atau Nopol Baru)
+                return (data && data !== '-') ? data : '<span class="text-muted">-</span>';
+            }
+        },
+        // --------------------------
         
         // 5. JENIS PAJAK
         { 

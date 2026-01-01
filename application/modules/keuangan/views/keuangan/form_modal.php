@@ -73,6 +73,7 @@
 </form>
 
 <script>
+    // Script format rupiah saat mengetik
     $('.rupiah').on('keyup', function(e){
         var n = parseInt($(this).val().replace(/\D/g,''),10);
         if(isNaN(n)) n = 0;

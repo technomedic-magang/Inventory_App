@@ -8,6 +8,7 @@
           <div class="page-pretitle">Modul Keuangan</div>
           <h2 class="page-title">Nilai Kekayaan Aset</h2>
         </div>
+        
         <div class="col-auto ms-auto d-print-none">
           <?php if(!$is_closed): ?>
              <button class="btn btn-warning" onclick="konfirmasiTutupBuku()">
@@ -85,7 +86,8 @@
                                     <th class="text-end">Status</th>
                                 </tr>
                             </thead>
-                        <tbody></tbody> </table>
+                            <tbody></tbody> 
+                        </table>
                     </div>
 
                 </div>

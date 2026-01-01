@@ -2,26 +2,29 @@
   var tabel = null;
 
   $(document).ready(function() {
+    // Inisialisasi DataTables
     tabel = $('#datatable-main').DataTable({
       "language": {
         "url": "<?= base_url() ?>dist/libs/DataTables/id.json"
       },
       "autoWidth": false,
-      "processing": true,  // Aktifkan indikator loading bawaan
-      "serverSide": true,  // Aktifkan mode server side (Ajax)
+      "processing": true,  // Indikator loading
+      "serverSide": true,  // Mode server side
       "ordering": true,
-      "order": [[2, 'desc']], // Sort default Tgl Beli
+      "order": [[2, 'desc']], // Default urut berdasarkan Tgl Beli
       "ajax": {
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>", 
         "type": "POST",
-        "data": function(data) { data.filter_kategori = $('#filter_kategori').val(); }
+        "data": function(data) { 
+            // Kirim parameter filter tambahan
+            data.filter_kategori = $('#filter_kategori').val(); 
+        }
       },
-
       "deferRender": true,
       "aLengthMenu": _datatableLengthMenu,
       "pageLength": 500,
       "columns": [
-        // 0. NO
+        // Kolom 0: Nomor Urut
         {
           "data": "<?= $this->pk_id ?>",
           "sortable": false,
@@ -29,7 +32,7 @@
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
-        // 1. aksi
+        // Kolom 1: Tombol Aksi
         {
           "data": "<?= $this->pk_id ?>",
           "className": "text-left",
@@ -51,13 +54,13 @@
               '</div>';
           }
         },
-        // 2. kode aset
+        // Kolom 2: Kode Aset
         {
           "data": "asset_kd",
           "className": "fw-bold",
           "render": function(d, t, r) { return d + '<br><small class="text-muted">' + r.asset_nm + '</small>'; }
         },
-        // 3. TGL PAKAI (Format dd-mm-yyyy)
+        // Kolom 3: Tanggal Pakai
         {
           "data": "calc_tgl", 
           "className": "text-left",
@@ -65,19 +68,19 @@
               return data ? data.split('-').reverse().join('-') : '';
           }
         },
-        // 4. UMUR (Bulan)
+        // Kolom 4: Umur Aset
         { 
           "data": "calc_umur",
           "className": "text-left",
           "render": function(d) { return '<span class="badge bg-blue-lt">' + d + ' Bln</span>'; }
         },
-        // 5. HARGA BELI
+        // Kolom 5: Harga Beli
         {
           "data": "calc_harga",
           "className": "text-left",
           "render": function(d) { return 'Rp ' + d; }
         },
-        // 6. METODE
+        // Kolom 6: Metode Valuasi
         {
           "data": "valuasi_metode",
           "className": "text-center",
@@ -85,18 +88,17 @@
               return (d === 'APRESIASI') ? '<span class="badge bg-green-lt">Apresiasi</span>' : '<span class="badge bg-red-lt">Depresiasi</span>';
           }
         },
-        // 7. NILAI BUKU
+        // Kolom 7: Nilai Buku Saat Ini
         {
           "data": "calc_nilai_buku",
           "className": "text-end fw-bold",
           "render": function(d){ return 'Rp '+d; }
         },
-        // 8. STATUS
+        // Kolom 8: Status Aset
         {
           "data": "calc_status",
           "className": "text-end",
           "render": function(d) {
-
             var cls = 'bg-secondary-lt';
             if(d==='Berjalan') cls='bg-blue-lt';
             if(d==='Mentok Min') cls='bg-orange-lt';
@@ -107,14 +109,13 @@
       ]
     });
 
-    // Event Listener Filter (Ajax Reload)
-    // Tidak reload halaman, tapi reload tabel via Ajax
+    // Event listener untuk filter dropdown
     $('#filter_kategori').change(function() {
-        tabel.ajax.reload(); // Ini fungsi bawaan datatables untuk refresh data
+        tabel.ajax.reload(); // Reload tabel saat filter berubah
     });
   });
 
-  // --- FUNGSI STANDAR LAINNYA ---
+  // --- Fungsi Konfirmasi Tutup Buku ---
   function konfirmasiTutupBuku() {
     if (confirm('KONFIRMASI TUTUP BUKU BULANAN:\n\nApakah Anda yakin?')) {
       $.ajax({
@@ -129,6 +130,7 @@
     }
   }
 
+  // --- Fungsi Modal Helper ---
   function _modal(e, opts) {
     if(e) e.preventDefault();
     var url = (typeof opts === 'object') ? opts.uri : opts;
@@ -140,6 +142,7 @@
     });
   }
   
+  // --- Fungsi Simpan Form ---
   function _save(e) {
       e.preventDefault();
       var form = $('#form');
