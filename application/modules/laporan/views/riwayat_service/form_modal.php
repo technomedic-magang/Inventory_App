@@ -104,12 +104,10 @@
             </div>
         </div>
 
-        <div class="border-dotted my-3"></div>
-
         <div class="row mt-2">
             <div class="col-9 offset-3">
-                <button type="submit" class="btn btn-primary" onclick="_save(event)"><?= _icon('save') ?> Simpan Data</button>
-                <button type="button" class="btn btn-default" data-bs-dismiss="modal"><?= _icon('cancel') ?> Batal</button>
+                <button type="submit" class="btn btn-primary" onclick="_save(event)">Simpan Data</button>
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal">Batal</button>
             </div>
         </div>
 
@@ -124,7 +122,7 @@
     };
 
     var allAssets = [];
-    var lastDateValue = ''; // Variabel untuk menyimpan nilai terakhir (agar tidak looping terus)
+    var lastDateValue = '';
 
     $(document).ready(function() {
         // 1. Simpan Data Aset ke Memory
@@ -152,8 +150,7 @@
             }
         });
 
-        // 3. LOGIKA OTOMASI TANGGAL (WATCHER METHOD)
-        // Jalankan watcher untuk memantau perubahan input tanggal secara real-time
+        // 3. LOGIKA OTOMASI TANGGAL
         startDateWatcher();
 
         // 4. LOGIKA KM
@@ -173,29 +170,25 @@
         cekJenisAset();
     });
 
-    // --- FUNGSI WATCHER (SOLUSI ANTI DELAY) ---
-    // Fungsi ini akan mengecek input setiap 500ms apakah nilainya berubah
+    // --- FUNGSI WATCHER ---
     function startDateWatcher() {
         setInterval(function() {
             var tglInput = $('#tgl_service');
-            var tglVal = tglInput.val(); // Format dd-mm-yyyy
+            var tglVal = tglInput.val(); 
             var isVisible = !$('#area-kendaraan').hasClass('d-none');
 
-            // Jalankan logika HANYA jika nilai berubah dari sebelumnya DAN form kendaraan muncul
             if (isVisible && tglVal !== lastDateValue) {
-                lastDateValue = tglVal; // Update nilai terakhir
+                lastDateValue = tglVal; 
 
-                // Logika Parsing
                 if (tglVal && tglVal.includes('-')) {
                     var parts = tglVal.split('-');
                     if (parts.length === 3) {
                         var day = parseInt(parts[0], 10);
-                        var month = parseInt(parts[1], 10) - 1; // JS Month 0-11
+                        var month = parseInt(parts[1], 10) - 1; 
                         var year = parseInt(parts[2], 10);
                         
                         var d = new Date(year, month, day);
                         
-                        // Validasi dan Hitung +3 Bulan
                         if(!isNaN(d.getTime())) {
                             d.setMonth(d.getMonth() + 3); 
                             
@@ -204,17 +197,15 @@
                             var newDay = ('0' + d.getDate()).slice(-2);
                             
                             var nextDate = newDay + '-' + newMonth + '-' + newYear;
-                            
-                            // Isi otomatis tanggal berikutnya
                             $('#tgl_berikutnya').val(nextDate);
                         }
                     }
                 }
             }
-        }, 500); // Cek setiap setengah detik (cukup cepat tapi ringan)
+        }, 500); 
     }
 
-    // --- FUNGSI FILTER ---
+    // --- FUNGSI FILTER (CLIENT SIDE) ---
     function filterAssetByKategori() {
         var katID = $('#filter_kategori').val();
         var $assetSelect = $('#asset_id');
@@ -241,7 +232,7 @@
         var $selectedOption = $('#asset_id').find('option:selected');
         var katKode = $selectedOption.attr('data-kode'); 
         
-        if(katKode == 'K2' || katKode == 'K4') {
+        if(katKode == 'K2' || katKode == 'K4' || katKode == 'KENDARAAN') {
             $('#area-kendaraan').removeClass('d-none');
         } else {
             $('#area-kendaraan').addClass('d-none');

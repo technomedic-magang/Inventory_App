@@ -31,13 +31,15 @@
                 <table class="table table-vcenter card-table table-striped table-sm text-nowrap" id="datatable-main" width="100%">
                   <thead>
                     <tr>
-                      <th width="10">No</th>
-                      <th width="10">Aksi</th>
-                      <th class="text-center">Tgl Bayar</th>
+                      <th width="20">No</th>
+                      <th width="40">Aksi</th>
+                      <th>Kode Aset</th>
                       <th>No. Transaksi / Aset</th>
-                      <th class="text-center">Plat No</th>
-                      <th class="text-center">Jenis</th>
-                      <th class="text-center">Berlaku Sampai</th>
+                      <th>Kategori</th>
+                      <th>Plat No</th>
+                      <th class="text-end">Jenis</th>
+                      <th class="text-end">Tgl Bayar</th>
+                      <th class="text-end">Berlaku Sampai</th>
                       <th class="text-end">Total Bayar</th>
                     </tr>
                   </thead>

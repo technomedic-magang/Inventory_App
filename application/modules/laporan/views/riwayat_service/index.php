@@ -13,7 +13,7 @@
             <a href="javascript:void(0)" 
                onclick="_modal(event, {uri: '<?= site_url($this->uri . '/form_modal') ?>', size: 'modal-lg', position: 'normal'})" 
                class="btn btn-primary d-sm-inline-block">
-                <i class="fas fa-plus me-1"></i> Input Data
+               <i class="fas fa-plus me-1"></i> Input Data
             </a>
           </div>
         </div>
@@ -26,6 +26,19 @@
       <div class="container-xl">
         <div class="card">
           <div class="card-body p-2">
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Filter Kategori:</label>
+                    <select id="main_filter_kategori" class="form-select">
+                        <option value="">- Semua Kategori -</option>
+                        <?php foreach($list_kategori as $kat): ?>
+                            <option value="<?= $kat['kategori_id'] ?>"><?= $kat['kategori_nm'] ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
             <div class="w-100">
               <div class="table-responsive">
                 <table class="table table-vcenter card-table table-striped table-sm display nowrap" id="datatable-main" width="100%">
@@ -33,11 +46,12 @@
                     <tr>
                       <th width="20">No</th>
                       <th width="40">Aksi</th>
-                      <th>Tanggal</th>
+                      <th>Kode Aset</th>
                       <th>Nama Aset</th>
                       <th>Kategori</th>
+                      <th>Tgl Service</th>
                       <th>Rincian / Keterangan</th>
-                      <th>Bengkel</th>
+                      <th>Nama Bengkel</th>
                       <th class="text-end">Biaya</th>
                     </tr>
                   </thead>

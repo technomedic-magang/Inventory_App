@@ -27,25 +27,31 @@
         },
         // 1. AKSI
         {
-          "data": "pajak_id",
+          "data": "<?= $this->pk_id ?>",
+          "className": "text-left",
           "sortable": false,
-          "className": "text-center",
           "render": function(data, type, row, meta) {
+            var uri_edit = '<?= site_url("laporan/pajak/form_modal/") ?>' + data;
             var uri_delete = '<?= site_url("laporan/pajak/delete/") ?>' + data;
-            return `<a class="text-danger" href="javascript:void(0)" onclick="_delete('${uri_delete}')" title="Hapus Riwayat">
-                      <i class="fas fa-trash"></i>
-                    </a>`;
+            return `<div class="btn-list btn-sm flex-nowrap">
+                      <div class="dropdown">
+                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">Aksi</button>
+                        <div class="dropdown-menu">
+                          <a class="dropdown-item p-1" href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_edit}', size: 'modal-lg'})"><i class="fas fa-edit me-1"></i> Ubah</a>
+                          <a class="dropdown-item p-1 text-danger" href="javascript:void(0)" onclick="_delete('${uri_delete}')"><i class="fas fa-trash me-1"></i> Hapus</a>
+                        </div>
+                      </div>
+                    </div>`;
           }
         },
-        // 2. TGL BAYAR
-        { 
-            "data": "transaksi_tgl", 
-            "className": "text-center",
-            "render": function(data) {
-                return data ? data.split('-').reverse().join('-') : '-';
-            }
+
+        // 2. KODE ASET
+        {
+          "data": "asset_kd",
+          "className": "text-left fw-bold"
         },
-        // 3. NO TRANSAKSI & ASET
+
+        // 4. NO TRANSAKSI & ASET
         { 
             "data": "transaksi_no", 
             "className": "text-left",
@@ -55,11 +61,17 @@
             }
         },
         
-        // --- [PERBAIKAN DISINI] ---
-        // 4. PLAT NOMOR (Mengambil alias 'plat_nomor' dari Model)
+        // 3 KATEGORI
+        {
+          "data": "kategori_nm",
+          "className": "text-left"
+        },
+
+        // --------------------------
+        // 6. PLAT NOMOR (Mengambil alias 'plat_nomor' dari Model)
         { 
             "data": "plat_nomor", 
-            "className": "fw-bold text-center",
+            "className": "fw-bold text-left",
             "render": function(data) {
                 // Tampilkan data (Nopol Master atau Nopol Baru)
                 return (data && data !== '-') ? data : '<span class="text-muted">-</span>';
@@ -67,27 +79,35 @@
         },
         // --------------------------
         
-        // 5. JENIS PAJAK
+        // 7. JENIS PAJAK
         { 
             "data": "pajak_jenis", 
-            "className": "text-center",
+            "className": "text-end",
             "render": function(data) {
                 var color = (data == '5_TAHUNAN') ? 'purple' : 'blue';
                 var label = (data == '5_TAHUNAN') ? '5 Tahunan' : 'Tahunan';
                 return `<span class="badge bg-${color}-lt">${label}</span>`;
             }
         },
-        // 6. BERLAKU SAMPAI
+        // 5. TGL BAYAR
+        { 
+            "data": "transaksi_tgl", 
+            "className": "text-end",
+            "render": function(data) {
+                return data ? data.split('-').reverse().join('-') : '-';
+            }
+        },
+        // 8. BERLAKU SAMPAI
         { 
             "data": "jatuh_tempo_tgl", 
-            "className": "text-center",
+            "className": "text-end",
             "render": function(data) {
                 if(!data) return '-';
                 var dateStr = data.split('-').reverse().join('-');
                 return `<span class="text-success fw-bold">${dateStr}</span>`;
             }
         },
-        // 7. TOTAL BAYAR
+        // 9. TOTAL BAYAR
         { 
             "data": "nominal_total", 
             "className": "text-end fw-bold",
