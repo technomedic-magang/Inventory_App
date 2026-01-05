@@ -16,6 +16,7 @@
             d.filter_kategori = $('#main_filter_kategori').val(); 
         }
       },
+      "pageLength": 500, // Sesuai gaya Parameter
       "columns": [
         // 0. No
         { 

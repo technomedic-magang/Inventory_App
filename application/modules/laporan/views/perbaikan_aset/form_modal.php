@@ -1,5 +1,5 @@
 <?php 
-// Logika Tampilan: Edit Mode vs Read Only Mode
+// Tentukan Mode: Read Only jika ID ada DAN status bukan 0 (Pending)
 $is_readonly = ($id && @$main['status_tiket'] != 0); 
 ?>
 
@@ -31,7 +31,6 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
         </div>
 
         <?php if($is_readonly): ?>
-
             <div class="hr-text text-blue">Detail Pengerjaan</div>
 
             <?php if($main['status_tiket'] == 1): ?>
@@ -111,7 +110,6 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
             </div>
 
         <?php else: ?>
-
             <div class="mb-1 row">
                 <label class="col-lg-3 col-md-4 col-form-label">Pelapor</label>
                 <div class="col-lg-8 col-md-8">
@@ -139,14 +137,30 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                     <select name="asset_id" id="asset_id" class="form-select select2-modal" required onchange="onAssetChange()">
                         <option value="">- Cari Nama / Kode Aset -</option>
                         <?php foreach ($list_asset as $k): ?>
+                            <?php 
+                                // LOGIKA UTAMA: DISABLE JIKA SEDANG DIPERBAIKI
+                                // Field 'status_perbaikan' didapat dari Subquery di Model M_perbaikan_aset
+                                $is_repair  = (isset($k['status_perbaikan']) && $k['status_perbaikan'] > 0);
+                                $is_current = (@$main['asset_id'] == $k['asset_id']); // Cek jika sedang edit tiket diri sendiri
+                                
+                                // Disable jika sedang rusak DAN bukan tiket yang sedang diedit
+                                $disabled = ($is_repair && !$is_current) ? 'disabled' : '';
+                                $info_txt = ($is_repair && !$is_current) ? ' (SEDANG DIPERBAIKI)' : '';
+                                
+                                // Opsional: Beri warna latar agak merah
+                                $style    = ($is_repair && !$is_current) ? 'background-color: #fceceb; color: #d63939;' : '';
+                            ?>
                             <option value="<?= $k['asset_id'] ?>" 
                                     data-kode="<?= $k['kategori_kd'] ?>"
                                     data-kat-id="<?= $k['kategori_id'] ?>" 
-                                    <?= (@$main['asset_id'] == $k['asset_id']) ? 'selected' : '' ?>>
-                                [<?= $k['asset_kd'] ?>] <?= $k['asset_nm'] ?>
+                                    <?= ($is_current) ? 'selected' : '' ?>
+                                    <?= $disabled ?>
+                                    style="<?= $style ?>">
+                                [<?= $k['asset_kd'] ?>] <?= $k['asset_nm'] . $info_txt ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <small class="text-danger d-none" id="warning_repair">* Aset yang sedang diperbaiki tidak dapat dipilih.</small>
                 </div>
             </div>
 
@@ -257,13 +271,22 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
     var lastDateValue = ''; 
 
     $(document).ready(function() {
-        // ... (KODE JS SAMA SEPERTI SEBELUMNYA) ...
+        // Ambil data aset ke array, simpan juga status disabled-nya
         $('#asset_id option').each(function() {
             if($(this).val() != '') { 
-                allAssets.push({ value: $(this).val(), text: $(this).text(), katId: $(this).data('kat-id'), kode: $(this).data('kode') });
+                allAssets.push({ 
+                    value: $(this).val(), 
+                    text: $(this).text(), 
+                    katId: $(this).data('kat-id'), 
+                    kode: $(this).data('kode'),
+                    disabled: $(this).is(':disabled'), // Simpan status disabled
+                    style: $(this).attr('style') // Simpan style merahnya
+                });
             }
         });
+
         $('.select2-modal').select2(select2Options);
+        
         $(document).on('input', '.number-separator', function() {
             var value = $(this).val().replace(/[^0-9]/g, '');
             if(value) $(this).val(new Intl.NumberFormat('id-ID').format(value));
@@ -295,6 +318,7 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
     function updateTicketNumber() {
         var tgl = $('#created_at').val();
         var asset_id = $('#asset_id').val(); 
+        
         if(tgl && asset_id) {
             $('#no_tiket_display').val('Generating...');
             $.ajax({
@@ -307,7 +331,9 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                     else { $('#no_tiket_display').val('Error Gen'); }
                 }
             });
-        } else { $('#no_tiket_display').val('Pilih Aset & Tanggal...'); }
+        } else { 
+            $('#no_tiket_display').val('Pilih Aset & Tanggal...'); 
+        }
     }
 
     function onAssetChange() { cekJenisAset(); updateTicketNumber(); }
@@ -358,14 +384,21 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
         var katID = $('#filter_kategori').val();
         var $assetSelect = $('#asset_id');
         var currentSelected = $assetSelect.val(); 
+        
         if ($assetSelect.data('select2')) { $assetSelect.select2('destroy'); }
         $assetSelect.find('option:gt(0)').remove();
+        
         $.each(allAssets, function(index, item) {
             if (katID === "" || item.katId == katID) {
                 var isSelected = (item.value == currentSelected) ? 'selected' : '';
-                $assetSelect.append('<option value="'+item.value+'" data-kat-id="'+item.katId+'" data-kode="'+item.kode+'" '+isSelected+'>'+item.text+'</option>');
+                // [PENTING] Tambahkan kembali atribut disabled dan style saat filter ulang
+                var disabledAttr = item.disabled ? 'disabled' : '';
+                var styleAttr = item.style ? 'style="' + item.style + '"' : '';
+                
+                $assetSelect.append('<option value="'+item.value+'" data-kat-id="'+item.katId+'" data-kode="'+item.kode+'" '+isSelected+' '+disabledAttr+' '+styleAttr+'>'+item.text+'</option>');
             }
         });
+        
         $assetSelect.select2(select2Options);
         if (!currentSelected) { $assetSelect.val('').trigger('change'); }
     }
@@ -373,6 +406,7 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
     function cekJenisAset() {
         var $selectedOption = $('#asset_id').find('option:selected');
         var katKode = $selectedOption.attr('data-kode'); 
+        
         if(katKode == 'K2' || katKode == 'K4' || katKode == 'KENDARAAN') {
             $('#area-kendaraan').removeClass('d-none');
         } else {

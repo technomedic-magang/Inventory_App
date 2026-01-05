@@ -6,127 +6,148 @@ class Keuangan_asset extends MY_Controller
     public function __construct()
     {
         parent::__construct();
-        // Memuat model khusus untuk modul ini
+        // Load model dengan nama yang sesuai file
         _models(['keuangan/m_keuangan_asset']);
         
-        // Inisialisasi variabel properti dari model
-        $this->table     = $this->m_keuangan_asset->table;
-        $this->pk_id     = $this->m_keuangan_asset->pk_id;
-        $this->template  = 'keuangan/keuangan/';
-        $this->uri_mod   = 'keuangan/keuangan_asset';
+        $this->template = 'keuangan/keuangan_asset/'; 
+        $this->uri_mod  = 'keuangan/keuangan_asset';
     }
 
-    /**
-     * Menampilkan halaman utama modul Keuangan Aset.
-     */
     public function index()
     {
-        // Mengambil daftar kategori untuk filter dropdown
+        $periode_sekarang = date('Y-m');
+        
+        $cek_closed = $this->db->select('nilai_id')
+                               ->get_where('log_asset_nilai', [
+                                   'periode_kd' => $periode_sekarang, 
+                                   'deleted_st' => 0
+                               ])->row();
+
+        $d['is_closed']        = ($cek_closed != null);
+        $d['periode_sekarang'] = $periode_sekarang; 
+        $d['periode_text']     = date('F Y');       
+
         $d['list_kategori'] = $this->db->where('deleted_st', 0)
-                                       ->order_by('kategori_nm', 'ASC')
                                        ->get('mst_kategori')
                                        ->result_array();
-        
-        // Mengambil data ringkasan total aset
-        $d['summary'] = $this->m_keuangan_asset->get_summary_total(); 
-        
-        // Data periode saat ini dan status tutup buku
-        $d['periode_sekarang'] = date('Y-m');
-        $d['is_closed'] = $this->m_keuangan_asset->cek_tutup_buku(date('Y-m'));
 
-        // Render view utama
+        $kalkulasi = $this->m_keuangan_asset->get_live_data(); 
+        $d['summary'] = $kalkulasi['summary'];
+
         $this->render($this->template . 'index', $d);
     }
 
-    /**
-     * Endpoint AJAX untuk memuat data tabel aset (Server Side).
-     */
     public function ajax_datatables()
     {
-        $this->m_keuangan_asset->load_datatables();
-    }
+        $filter_kategori = $this->input->post('filter_kategori');
+        
+        $result = $this->m_keuangan_asset->get_live_data($filter_kategori);
+        $list_data = $result['data'];
 
-    /**
-     * Menampilkan modal form untuk tambah/edit data aset.
-     */
-    public function form_modal()
-    {
-        $id = $this->input->get('id');
-        
-        // URL action untuk form
-        $d['form_act'] = site_url($this->uri_mod . '/save_setting');
-        
-        // Jika ada ID, ambil data untuk edit. Jika tidak, data kosong (tambah baru).
-        $d['data'] = ($id) ? DB::get($this->table, [$this->pk_id => $id]) : [];
-        
-        // Load view modal
-        $this->load->view($this->template . 'form_modal', $d);
-    }
+        $data = [];
+        $no = 1;
 
-    /**
-     * Menyimpan data dari form modal ke database.
-     */
-    public function save_setting()
-    {
-        $d = _post();
-        
-        // Membersihkan format angka (menghapus titik ribuan)
-        $nominal = str_replace('.', '', $d['beli_nominal']);
-        $residu  = str_replace('.', '', $d['residu_nominal']);
+        foreach ($list_data as $r) {
+            $row = [];
+            $row[] = $no++;
+            $row[] = '-'; // Aksi Read Only
+            $row[] = '<div class="fw-bold text-dark">'.$r['asset_kd'].'</div>';
+            $row[] = date('d-m-Y', strtotime($r['beli_tgl']));
+            
+            $umur_jalan = $r['calc_umur_jalan'];
+            $masa_total = $r['pakai_masa_bln'];
+            $persen = ($masa_total > 0) ? round(($umur_jalan / $masa_total) * 100) : 0;
+            if ($persen > 100) $persen = 100;
+            
+            $bar_color = ($persen >= 100) ? 'bg-purple' : 'bg-blue';
+            $row[] = '<div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>'.$umur_jalan.' / '.$masa_total.' Bln</span>
+                            <span>'.$persen.'%</span>
+                        </div>
+                        <div class="progress progress-xs">
+                            <div class="progress-bar '.$bar_color.'" style="width: '.$persen.'%"></div>
+                        </div>
+                      </div>';
+            
+            $row[] = 'Rp ' . number_format($r['beli_nominal'], 0, ',', '.');
+            $row[] = '<div class="text-center"><span class="badge bg-secondary-lt text-uppercase" style="font-size:10px">'.$r['depresiasi_metode'].'</span></div>';
+            
+            $val_buku = $r['calc_nilai_buku'];
+            $row[] = '<div class="text-end fw-bold text-green">Rp ' . number_format($val_buku, 0, ',', '.') . '</div>';
+            
+            if ($r['calc_status'] == 'HABIS') {
+                $row[] = '<div class="text-center"><span class="badge bg-purple-lt">Habis Susut</span></div>';
+            } else {
+                $row[] = '<div class="text-center"><span class="badge bg-yellow-lt">Aktif</span></div>';
+            }
 
-        // Validasi input negatif
-        if ($nominal < 0 || $residu < 0) {
-            _json(_response('00', null, 'Nominal tidak boleh minus!')); 
-            return;
+            $data[] = $row;
         }
 
-        $data_update = [
-            'beli_nominal'   => $nominal,
-            'beli_tgl'       => $d['beli_tgl'],
-            'pakai_masa_bln' => $d['pakai_masa_bln'],
-            'residu_nominal' => $residu,
-            'valuasi_metode' => $d['valuasi_metode'],
-            'updated_at'     => date('Y-m-d H:i:s'),
-            'updated_by'     => $this->session->userdata('user_id')
-        ];
-
-        // Update data di database
-        DB::update($this->table, $data_update, [$this->pk_id => $d['asset_id']]);
-        
-        // Kirim respon sukses
-        _json(_response('01', null, 'Berhasil disimpan.'));
+        echo json_encode([
+            "draw" => intval($this->input->post('draw')),
+            "recordsTotal" => count($data),
+            "recordsFiltered" => count($data),
+            "data" => $data
+        ]);
     }
 
-    /**
-     * Menghapus data aset (Soft Delete).
-     */
-    public function delete($id = null)
-    {
-        $w = [$this->pk_id => $id];
-        // Set deleted_st = 1 untuk soft delete
-        DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
-        
-        // Kirim respon sukses dan refresh tabel
-        _json(_response('03', site_url($this->uri_mod)));
-    }
-
-    /**
-     * Memproses tutup buku bulanan.
-     */
-    public function proses_tutup_buku()
+    // [FIX UTAMA] Menggunakan $this->render agar modal muncul di UI
+    public function form_modal_tutup_buku()
     {
         $periode = date('Y-m');
         
-        // Cek apakah sudah pernah tutup buku di periode ini
-        if ($this->m_keuangan_asset->cek_tutup_buku($periode)) {
-            _json(_response('00', null, 'Periode ini sudah ditutup!')); 
+        $cek = $this->db->get_where('log_asset_nilai', ['periode_kd' => $periode, 'deleted_st' => 0])->row();
+        if($cek) {
+            echo '<div class="alert alert-danger">Periode '.$periode.' sudah ditutup!</div>';
             return;
         }
+
+        $kalkulasi = $this->m_keuangan_asset->get_live_data(); 
         
-        // Eksekusi tutup buku
-        $this->m_keuangan_asset->eksekusi_tutup_buku($periode);
+        $d['summary']      = $kalkulasi['summary'];
+        $d['total_asset']  = count($kalkulasi['data']);
+        $d['periode']      = $periode;
+        $d['periode_text'] = date('F Y');
         
-        // Kirim respon sukses
-        _json(_response('01', site_url($this->uri_mod)));
+        $d['form_act'] = site_url($this->uri_mod . '/tutup_buku_process');
+
+        // Gunakan render, bukan load->view
+        $this->render($this->template . 'form_modal_tutup_buku', $d);
     }
+
+    public function tutup_buku_process()
+    {
+        $periode = $this->input->post('periode_kd');
+        if (empty($periode)) $periode = date('Y-m');
+
+        $res = $this->m_keuangan_asset->proses_tutup_buku($periode);
+        
+        // Gunakan helper standar _json & _response
+        if ($res['status']) {
+            _json(_response('01', site_url($this->uri_mod)));
+        } else {
+            _json(['status' => false, 'msg' => $res['msg']]);
+        }
+    }
+
+    // ... code sebelumnya ...
+
+    // [BARU] Proses Buka Buku Kembali
+    public function buka_buku_process()
+    {
+        $periode = $this->input->post('periode_kd');
+        if (empty($periode)) $periode = date('Y-m');
+
+        $res = $this->m_keuangan_asset->proses_buka_buku($periode);
+        
+        if ($res['status']) {
+            // Reload halaman setelah sukses
+            _json(_response('01', site_url($this->uri_mod)));
+        } else {
+            _json(['status' => false, 'msg' => $res['msg']]);
+        }
+    }
+
 }

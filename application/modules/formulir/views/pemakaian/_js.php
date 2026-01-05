@@ -10,16 +10,14 @@
       "ordering": true,
       "order": [ [2, 'desc'] ], // Urut berdasarkan Tgl Pakai
       "ajax": {
-        // [PERBAIKAN 1]: Gunakan site_url() agar alamat tidak dobel
         "url": "<?= site_url($this->uri . '/ajax_datatables?n=' . _get('n')) ?>", 
         "type": "POST",
         "data": function (d) {
-            // Tambahkan CSRF Token jika framework menggunakannya
             d.<?php echo $this->security->get_csrf_token_name(); ?> = '<?php echo $this->security->get_csrf_hash(); ?>';
         }
       },
       "deferRender": true,
-      "aLengthMenu": [[10, 25, 50], [10, 25, 50]], // Definisi Length Menu standar
+      "aLengthMenu": [[10, 25, 50], [10, 25, 50]], 
       "pageLength": 10,
       "columns": [
         // 0. NO
@@ -37,11 +35,15 @@
           "className": "text-center",
           "sortable": false,
           "render": function(data, type, row, meta) {
-            // [PERBAIKAN 2]: Gunakan site_url() pada tombol hapus juga
-            var uri_edit = '<?= site_url($this->uri . '/form_modal/') ?>' + data;
             var uri_delete = '<?= site_url($this->uri . '/delete/') ?>' + data;
             
-            // Hanya tampilkan hapus jika status OPEN
+            // [LOGIKA TOMBOL AKSI]
+            // Jika sudah dibatalkan atau dihapus, kunci tombol
+            if (row.deleted_st == 1 || row.pemakaian_sts == 'DIBATALKAN') {
+                return '<span class="badge bg-red-lt"><i class="fas fa-ban me-1"></i> Dibatalkan</span>';
+            }
+
+            // Jika status OPEN, boleh dihapus
             if (row.pemakaian_sts == 'OPEN') {
               return `
                 <div class="dropdown">
@@ -50,15 +52,17 @@
                   </button>
                   <div class="dropdown-menu">
                     <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="_delete('${uri_delete}')">
-                      <i class="fas fa-trash me-2"></i> Hapus
+                      <i class="fas fa-trash me-2"></i> Batalkan / Hapus
                     </a>
                   </div>
                 </div>`;
             }
-            return '<span class="text-muted medium"><i class="fas fa-lock"></i> Locked</span>';
+            
+            // Default Locked (Misal sudah closed/kembali)
+            return '<span class="text-muted medium"><i class="fas fa-lock"></i> Selesai</span>';
           }
         },
-        // 2. TGL PAKAI (Format dd-mm-yyyy)
+        // 2. TGL PAKAI
         { 
             "data": "transaksi_tgl", 
             "className": "text-center",
@@ -67,10 +71,18 @@
             }
         },
         // 3. NO TRANSAKSI
-        { "data": "transaksi_no", "className": "fw-bold" },
+        { 
+            "data": "transaksi_no", 
+            "className": "fw-bold",
+            "render": function(data, type, row) {
+                // Beri coret jika dibatalkan
+                if(row.deleted_st == 1) return '<span class="text-decoration-line-through text-muted">' + data + '</span>';
+                return data;
+            }
+        },
         // 4. PENGGUNA
         { "data": "pegawai_nm" },
-        // 5. DEADLINE (Format dd-mm-yyyy)
+        // 5. DEADLINE
         { 
             "data": "kembali_rencana_tgl", 
             "className": "text-center",
@@ -83,7 +95,12 @@
           "data": "pemakaian_sts",
           "className": "text-center",
           "render": function(data, type, row, meta) {
-            var color = (data == 'OPEN') ? 'warning' : 'success';
+            // [LOGIKA WARNA BADGE]
+            var color = 'secondary';
+            if(data == 'OPEN') color = 'warning';
+            if(data == 'CLOSED' || data == 'SELESAI') color = 'success';
+            if(data == 'DIBATALKAN') color = 'danger'; // Merah
+
             return `<span class="badge bg-${color}-lt">${data}</span>`;
           }
         },

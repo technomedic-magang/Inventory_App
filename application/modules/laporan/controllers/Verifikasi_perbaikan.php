@@ -12,7 +12,7 @@ class Verifikasi_perbaikan extends MY_Controller
         $this->table      = 'dat_service';
         $this->pk_id      = 'service_id';
         
-        // [FIX PATH] Sesuai folder Anda: laporan
+        // Sesuaikan folder view/url Anda
         $this->uri_mod    = 'laporan/verifikasi_perbaikan'; 
         $this->template   = 'laporan/verifikasi_perbaikan/'; 
     }
@@ -52,41 +52,84 @@ class Verifikasi_perbaikan extends MY_Controller
         $asset_id = $tiket->asset_id;
 
         if ($aksi == 'approve') {
-            // SKENARIO 1: TERIMA & JADWALKAN
+            // SKENARIO 1: TERIMA & BUAT RENCANA (Status 0 -> 1)
             $data_update = [
-                'tgl_rencana'  => $this->_convert_date($this->input->post('tgl_rencana')),
-                'status_tiket' => 1, // Proses
-                'updated_at'   => date('Y-m-d H:i:s'),
-                'updated_by'   => $this->session->userdata('user_id')
+                'tgl_rencana'       => $this->_convert_date($this->input->post('tgl_rencana')),
+                'deskripsi_rencana' => $this->input->post('deskripsi_rencana'),
+                'bengkel_nm'        => $this->input->post('bengkel_nm_rencana'),
+                'status_tiket'      => 1, // Sedang Proses
+                'updated_at'        => date('Y-m-d H:i:s'),
+                'updated_by'        => $this->session->userdata('user_id')
             ];
+
+            // Simpan jenis tindakan AC (jika ada) ke kolom keterangan_txt
+            if ($this->input->post('jenis_perbaikan_ac')) {
+                $data_update['keterangan_txt'] = $this->input->post('jenis_perbaikan_ac');
+            }
+
             $this->db->update($this->table, $data_update, [$this->pk_id => $id]);
+            
+            // Update Status Master Aset jadi PERBAIKAN
             $this->db->update('mst_asset', ['asset_kondisi' => 'PERBAIKAN'], ['asset_id' => $asset_id]);
 
-        } elseif ($aksi == 'reject') {
-            // SKENARIO 2: TOLAK
-            $data_update = [
-                'status_tiket' => 9, // Ditolak
-                'updated_at'   => date('Y-m-d H:i:s'),
-                'updated_by'   => $this->session->userdata('user_id')
-            ];
-            $this->db->update($this->table, $data_update, [$this->pk_id => $id]);
-
         } elseif ($aksi == 'finish') {
-            // SKENARIO 3: SELESAI
+            // SKENARIO 2: SELESAI (Status 1 -> 2)
             $kondisi_akhir = $this->input->post('kondisi_akhir'); 
-            $biaya = str_replace('.', '', $this->input->post('biaya'));
+            
+            // --- [PERBAIKAN PENTING: SANITASI BIAYA] ---
+            $raw_biaya = $this->input->post('biaya');
+            // Hapus semua karakter KECUALI angka 0-9 (Huruf/Titik/Rp akan hilang)
+            $clean_biaya = preg_replace('/[^0-9]/', '', $raw_biaya);
+            
+            // Jika kosong (misal user input huruf semua), set jadi 0
+            if(empty($clean_biaya)) $clean_biaya = 0;
+            // -------------------------------------------
 
             $data_update = [
-                'tgl_service'  => $this->_convert_date($this->input->post('tgl_service')),
-                'bengkel_nm'   => $this->input->post('bengkel_nm'),
-                'biaya'        => (float) $biaya,
-                'status_tiket' => 2, // Selesai
+                'tgl_service'            => $this->_convert_date($this->input->post('tgl_service')),
+                'deskripsi_penyelesaian' => $this->input->post('deskripsi_penyelesaian'),
+                'bengkel_nm'             => $this->input->post('bengkel_nm'),
+                'biaya'                  => (float) $clean_biaya, // Pastikan tipe data float
+                'status_tiket'           => 2, // Selesai
+                'updated_at'             => date('Y-m-d H:i:s'),
+                'updated_by'             => $this->session->userdata('user_id'),
+                'kondisi_akhir'          => $kondisi_akhir // Simpan history kondisi
+            ];
+
+            // --- LOGIKA JADWAL BERIKUTNYA (AUTO CALCULATE +3 BULAN) ---
+            $tgl_selesai = date('Y-m-d'); 
+            if($this->input->post('tgl_service')) {
+                 $tgl_selesai = $this->_convert_date($this->input->post('tgl_service'));
+            }
+
+            // Cek Jenis Aset untuk penentuan jadwal
+            $asset_detail = $this->db->get_where('mst_asset', ['asset_id' => $asset_id])->row();
+            $nama_aset = strtoupper($asset_detail->asset_nm);
+            $kode_aset = strtoupper($asset_detail->asset_kd);
+
+            // Cek apakah AC atau Kendaraan (Sesuai logika JS di form modal)
+            $isAC = (strpos($nama_aset, 'AC ') !== false || strpos($nama_aset, 'AIR CONDITIONER') !== false || $kode_aset == 'AC');
+            $isKendaraan = (strpos($nama_aset, 'MOTOR') !== false || strpos($nama_aset, 'MOBIL') !== false || strpos($nama_aset, 'KENDARAAN') !== false);
+
+            if ($isAC || $isKendaraan) {
+                 // Set otomatis 3 bulan kedepan
+                 $data_update['tgl_berikutnya'] = date('Y-m-d', strtotime('+3 months', strtotime($tgl_selesai)));
+            }
+            // ----------------------------------------------------------
+
+            $this->db->update($this->table, $data_update, [$this->pk_id => $id]);
+            
+            // Update Kondisi Master Aset (Baik/Rusak Ringan/dll)
+            $this->db->update('mst_asset', ['asset_kondisi' => $kondisi_akhir], ['asset_id' => $asset_id]);
+
+        } elseif ($aksi == 'reject') {
+            // SKENARIO 3: TOLAK
+            $data_update = [
+                'status_tiket' => 9, 
                 'updated_at'   => date('Y-m-d H:i:s'),
                 'updated_by'   => $this->session->userdata('user_id')
             ];
-
             $this->db->update($this->table, $data_update, [$this->pk_id => $id]);
-            $this->db->update('mst_asset', ['asset_kondisi' => $kondisi_akhir], ['asset_id' => $asset_id]);
         }
 
         $this->db->trans_complete();

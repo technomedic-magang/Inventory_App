@@ -142,11 +142,18 @@ class M_perbaikan_aset extends CI_Model
     }
 
     public function get_all_assets() {
-        return $this->db->select('a.asset_id, a.asset_nm, a.asset_kd, k.kategori_nm, k.kategori_kd, k.kategori_id')
-                        ->from('mst_asset a')
-                        ->join('mst_kategori k', 'a.kategori_id = k.kategori_id', 'left')
-                        ->where(['a.deleted_st'=>0, 'a.active_st'=>1])
-                        ->order_by('a.asset_nm', 'ASC')->get()->result_array();
+        $this->db->select('a.asset_id, a.asset_nm, a.asset_kd, k.kategori_nm, k.kategori_kd, k.kategori_id');
+        
+        // [BARU] Subquery untuk cek status tiket aktif (0=Baru, 1=Proses)
+        // Hasilnya > 0 jika sedang diperbaiki
+        $this->db->select('(SELECT COUNT(*) FROM dat_service s WHERE s.asset_id = a.asset_id AND s.status_tiket IN (0,1) AND s.deleted_st = 0) as status_perbaikan');
+        
+        $this->db->from('mst_asset a');
+        $this->db->join('mst_kategori k', 'a.kategori_id = k.kategori_id', 'left');
+        $this->db->where(['a.deleted_st'=>0, 'a.active_st'=>1]);
+        $this->db->order_by('a.asset_nm', 'ASC');
+        
+        return $this->db->get()->result_array();
     }
 
     public function get_all_kategori() {

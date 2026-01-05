@@ -57,6 +57,11 @@ class Pemakaian extends MY_Controller
              return;
         }
 
+        if ($id != null) {
+            _json(['status' => false, 'msg' => 'Maaf, Data Pemakaian tidak bisa diedit demi keamanan stok. Silakan Hapus dan Input Ulang.']);
+            return;
+        }
+
         // --- 1. KONVERSI TANGGAL PINJAM (Helper Function) ---
         $tgl_sql = $this->_convert_date($tgl_raw);
 
@@ -105,11 +110,17 @@ class Pemakaian extends MY_Controller
         }
     }
 
+    // Di Controller Pemakaian.php
     public function delete($id = null)
     {
-        $w = [$this->pk_id => $id];
-        DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
-        _json(_response('03', site_url($this->uri . '?n=' . $this->input->get('n'))));
+        // Panggil fungsi model yang sudah kita perbaiki stok-nya
+        $status = $this->m_pemakaian->hapus_transaksi($id);
+        
+        if ($status) {
+            _json(_response('03', site_url($this->uri . '?n=' . $this->input->get('n'))));
+        } else {
+            _json(['status' => false, 'msg' => 'Gagal menghapus data.']);
+        }
     }
 
     public function ajax_datatables()

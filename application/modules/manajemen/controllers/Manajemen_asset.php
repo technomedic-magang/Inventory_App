@@ -52,10 +52,13 @@ class Manajemen_asset extends MY_Controller
         // Contoh: "1.000.000" menjadi "1000000"
         $harga_beli = str_replace('.', '', $d['beli_nominal']);
         $nilai_residu = str_replace('.', '', $d['residu_nominal']);
+        $masa_pakai = abs((int) $d['pakai_masa_bln']);
 
         // Pastikan kosong dianggap 0
         if(empty($harga_beli)) $harga_beli = 0;
         if(empty($nilai_residu)) $nilai_residu = 0;
+        // Pastikan masa pakai minimal 1 bulan agar tidak error division by zero di rumus keuangan
+        if ($masa_pakai < 1) $masa_pakai = 1;
 
         // Konversi Tanggal (Format input sekarang pasti dd-mm-yyyy)
         // Fungsi ini akan mengubahnya menjadi Y-m-d untuk disimpan ke MySQL

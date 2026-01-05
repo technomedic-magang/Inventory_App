@@ -16,6 +16,7 @@
             d.filter_status = $('#filter_status').val();
         }
       },
+      "pageLength": 500, // Sesuai gaya Parameter
       "columns": [
         // 0. No
         { 

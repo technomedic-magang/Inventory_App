@@ -3,7 +3,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Perbaikan_aset extends MY_Controller
 {
-    // ... (__construct, index, ajax_datatables, form_modal TETAP SAMA) ...
     public function __construct()
     {
         parent::__construct();
@@ -58,7 +57,6 @@ class Perbaikan_aset extends MY_Controller
 
     public function get_no_tiket_ajax()
     {
-        // ... (KODE INI TETAP SAMA) ...
         if (ob_get_length()) ob_clean(); 
         header('Content-Type: application/json');
 
@@ -80,24 +78,42 @@ class Perbaikan_aset extends MY_Controller
 
     public function save($id = null)
     {
-        // [VALIDASI KEAMANAN TAMBAHAN]
-        // Cek apakah tiket sudah diproses. Jika sudah (status != 0), tolak edit.
+        // 1. Validasi Edit: Cek Status
         if ($id) {
             $cek_status = $this->db->select('status_tiket')->get_where($this->table, [$this->pk_id => $id])->row();
             if ($cek_status && $cek_status->status_tiket != 0) {
-                _json(['status' => false, 'msg' => 'Tiket sudah diproses/selesai, data terkunci.']);
+                // KIRIM msg DAN message
+                _json(['status' => false, 'msg' => 'Data terkunci (Sudah diproses).', 'message' => 'Data terkunci (Sudah diproses).']);
                 return;
             }
         }
 
         $d = _post();
+        if (empty($d['asset_id'])) { 
+            _json(['status' => false, 'msg' => 'Aset wajib dipilih.', 'message' => 'Aset wajib dipilih.']); 
+            return; 
+        }
 
-        if (empty($d['asset_id'])) { _json(['status' => false, 'msg' => 'Aset wajib dipilih.']); return; }
-        
+        // 2. VALIDASI DOUBLE TICKET
+        $this->db->where('asset_id', $d['asset_id']);
+        $this->db->where_in('status_tiket', [0, 1]); 
+        $this->db->where('deleted_st', 0);
+        if ($id) { $this->db->where($this->pk_id . ' !=', $id); }
+        $active_ticket = $this->db->get($this->table)->row();
+
+        if ($active_ticket) {
+            $status_msg = ($active_ticket->status_tiket == 0) ? 'Menunggu Verifikasi' : 'Sedang Diperbaiki';
+            $pesan_error = 'GAGAL: Aset ini masih dalam status ' . $status_msg . '. Harap selesaikan tiket sebelumnya.';
+            // KIRIM msg DAN message
+            _json(['status' => false, 'msg' => $pesan_error, 'message' => $pesan_error]);
+            return;
+        }
+
+        // Lanjut Upload
         $foto_name = '';
         if (!empty($_FILES['keluhan_foto']['name'])) {
             $config['upload_path']   = './uploads/service/'; 
-            $config['allowed_types'] = 'jpg|jpeg|png';
+            $config['allowed_types'] = 'jpg|jpeg|png'; 
             $config['max_size']      = 5120;
             $config['encrypt_name']  = TRUE;
             $this->load->library('upload', $config);
@@ -105,7 +121,8 @@ class Perbaikan_aset extends MY_Controller
                 $upload_data = $this->upload->data();
                 $foto_name = $upload_data['file_name'];
             } else {
-                _json(['status' => false, 'msg' => 'Upload Gagal: ' . $this->upload->display_errors('', '')]); 
+                $err = 'Upload Gagal: ' . $this->upload->display_errors('', '');
+                _json(['status' => false, 'msg' => $err, 'message' => $err]); 
                 return;
             }
         }
@@ -113,24 +130,22 @@ class Perbaikan_aset extends MY_Controller
         $created_at = !empty($d['created_at']) ? $this->_convert_date($d['created_at']) : date('Y-m-d');
         $created_at .= ' ' . date('H:i:s');
 
-        $km_saat_ini = str_replace('.', '', $d['kilometer_saat_ini']);
-        $km_next     = str_replace('.', '', $d['kilometer_berikutnya']);
+        $km_saat_ini = isset($d['kilometer_saat_ini']) ? str_replace('.', '', $d['kilometer_saat_ini']) : NULL;
+        $km_next     = isset($d['kilometer_berikutnya']) ? str_replace('.', '', $d['kilometer_berikutnya']) : NULL;
         $tgl_next    = !empty($d['tgl_berikutnya']) ? $this->_convert_date($d['tgl_berikutnya']) : NULL;
 
         $data = [
-            'asset_id'          => $d['asset_id'],
-            'keluhan_deskripsi' => $d['keluhan_deskripsi'],
-            'created_at'        => $created_at, 
-            'updated_at'        => date('Y-m-d H:i:s'),
-            'updated_by'        => $this->session->userdata('user_id'),
+            'asset_id'           => $d['asset_id'],
+            'keluhan_deskripsi'  => $d['keluhan_deskripsi'],
+            'created_at'         => $created_at, 
+            'updated_at'         => date('Y-m-d H:i:s'),
+            'updated_by'         => $this->session->userdata('user_id'),
             'kilometer_saat_ini' => empty($km_saat_ini) ? NULL : $km_saat_ini,
             'kilometer_berikutnya'=> empty($km_next) ? NULL : $km_next,
             'tgl_berikutnya'     => $tgl_next
         ];
 
-        if ($foto_name) {
-            $data['keluhan_foto'] = $foto_name;
-        }
+        if ($foto_name) $data['keluhan_foto'] = $foto_name;
 
         $redirect_uri = site_url($this->uri_mod . '?n=' . $this->input->get('n'));
 
@@ -152,11 +167,9 @@ class Perbaikan_aset extends MY_Controller
     }
     
     public function delete($id = null) {
-        // [VALIDASI KEAMANAN TAMBAHAN]
-        // Cek apakah tiket sudah diproses. Jika sudah, tolak hapus.
         $cek_status = $this->db->select('status_tiket')->get_where($this->table, [$this->pk_id => $id])->row();
         if ($cek_status && $cek_status->status_tiket != 0) {
-            _json(['status' => false, 'msg' => 'Tiket sudah diproses, tidak dapat dihapus.']);
+            _json(['status' => false, 'msg' => 'Tiket sudah diproses, tidak dapat dihapus.', 'message' => 'Tiket sudah diproses.']);
             return;
         }
 
