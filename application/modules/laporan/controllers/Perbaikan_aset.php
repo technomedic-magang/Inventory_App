@@ -11,6 +11,7 @@ class Perbaikan_aset extends MY_Controller
         $this->table      = $this->m_perbaikan_aset->table;
         $this->pk_id      = $this->m_perbaikan_aset->pk_id;
         $this->uri_mod    = 'laporan/perbaikan_aset'; 
+        // $this->uri    = 'laporan/perbaikan_aset'; 
         $this->template   = 'laporan/perbaikan_aset/'; 
     }
 
@@ -109,23 +110,41 @@ class Perbaikan_aset extends MY_Controller
             return;
         }
 
-        // Lanjut Upload
+        // =========================================================================
+        // MODIFIKASI: UPLOAD KE FOLDER PROJECT API (Project_Magang_API)
+        // =========================================================================
         $foto_name = '';
         if (!empty($_FILES['keluhan_foto']['name'])) {
-            $config['upload_path']   = './uploads/service/'; 
+            
+            // Tentukan path relatif mundur satu folder (..) lalu masuk ke folder API
+            // FCPATH mengarah ke C:\laragon\www\Project_Magang\
+            $path_api = FCPATH . '../Project_Magang_API/uploads/keluhan/';
+
+            // Cek apakah folder tujuan ada, jika tidak, buat foldernya secara otomatis
+            if (!is_dir($path_api)) {
+                mkdir($path_api, 0777, true);
+            }
+
+            // Set konfigurasi upload
+            $config['upload_path']   = $path_api; 
             $config['allowed_types'] = 'jpg|jpeg|png'; 
-            $config['max_size']      = 5120;
-            $config['encrypt_name']  = TRUE;
+            $config['max_size']      = 5120; // 5MB
+            $config['encrypt_name']  = TRUE; // Nama file diacak agar unik
+            
             $this->load->library('upload', $config);
+            
             if ($this->upload->do_upload('keluhan_foto')) {
                 $upload_data = $this->upload->data();
                 $foto_name = $upload_data['file_name'];
             } else {
                 $err = 'Upload Gagal: ' . $this->upload->display_errors('', '');
+                // Uncomment baris bawah jika ingin debug path saat error
+                // $err .= " (Target Path: " . $path_api . ")"; 
                 _json(['status' => false, 'msg' => $err, 'message' => $err]); 
                 return;
             }
         }
+        // =========================================================================
 
         $created_at = !empty($d['created_at']) ? $this->_convert_date($d['created_at']) : date('Y-m-d');
         $created_at .= ' ' . date('H:i:s');
@@ -145,7 +164,10 @@ class Perbaikan_aset extends MY_Controller
             'tgl_berikutnya'     => $tgl_next
         ];
 
-        if ($foto_name) $data['keluhan_foto'] = $foto_name;
+        // Jika ada foto baru yang diupload, masukkan ke database
+        if ($foto_name) {
+            $data['keluhan_foto'] = $foto_name;
+        }
 
         $redirect_uri = site_url($this->uri_mod . '?n=' . $this->input->get('n'));
 

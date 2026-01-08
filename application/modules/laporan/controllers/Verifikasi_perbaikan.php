@@ -14,6 +14,7 @@ class Verifikasi_perbaikan extends MY_Controller
         
         // Sesuaikan folder view/url Anda
         $this->uri_mod    = 'laporan/verifikasi_perbaikan'; 
+        // $this->uri_mod    = 'laporan/verifikasi_perbaikan'; 
         $this->template   = 'laporan/verifikasi_perbaikan/'; 
     }
 
@@ -46,6 +47,9 @@ class Verifikasi_perbaikan extends MY_Controller
     {
         $aksi = $this->input->post('aksi_admin'); // approve, reject, finish
         
+        // [PENTING] Load Library Upload jika belum di-autoload
+        $this->load->library('upload');
+
         $this->db->trans_start(); 
 
         $tiket = $this->db->get_where($this->table, [$this->pk_id => $id])->row();
@@ -62,7 +66,6 @@ class Verifikasi_perbaikan extends MY_Controller
                 'updated_by'        => $this->session->userdata('user_id')
             ];
 
-            // Simpan jenis tindakan AC (jika ada) ke kolom keterangan_txt
             if ($this->input->post('jenis_perbaikan_ac')) {
                 $data_update['keterangan_txt'] = $this->input->post('jenis_perbaikan_ac');
             }
@@ -76,50 +79,80 @@ class Verifikasi_perbaikan extends MY_Controller
             // SKENARIO 2: SELESAI (Status 1 -> 2)
             $kondisi_akhir = $this->input->post('kondisi_akhir'); 
             
-            // --- [PERBAIKAN PENTING: SANITASI BIAYA] ---
             $raw_biaya = $this->input->post('biaya');
-            // Hapus semua karakter KECUALI angka 0-9 (Huruf/Titik/Rp akan hilang)
             $clean_biaya = preg_replace('/[^0-9]/', '', $raw_biaya);
-            
-            // Jika kosong (misal user input huruf semua), set jadi 0
             if(empty($clean_biaya)) $clean_biaya = 0;
-            // -------------------------------------------
+
+            // =================================================================
+            // [BARU] LOGIKA UPLOAD FOTO AFTER (BUKTI PENGERJAAN)
+            // =================================================================
+            $foto_pengerjaan = '';
+            if (!empty($_FILES['foto_pengerjaan']['name'])) {
+                
+                // Upload ke folder Project API (Sama seperti foto Before)
+                $path_api = FCPATH . '../Project_Magang_API/uploads/keluhan/';
+                
+                // Buat folder jika belum ada
+                if (!is_dir($path_api)) {
+                    mkdir($path_api, 0777, true);
+                }
+
+                $config['upload_path']   = $path_api;
+                $config['allowed_types'] = 'jpg|jpeg|png';
+                $config['max_size']      = 5120; // 5MB
+                $config['encrypt_name']  = TRUE;
+
+                // Inisialisasi ulang config
+                $this->upload->initialize($config);
+
+                if ($this->upload->do_upload('foto_pengerjaan')) {
+                    $upload_data = $this->upload->data();
+                    $foto_pengerjaan = $upload_data['file_name'];
+                } else {
+                    $err = 'Upload Foto Gagal: ' . $this->upload->display_errors('', '');
+                    _json(['status' => false, 'msg' => $err]);
+                    return;
+                }
+            }
+            // =================================================================
 
             $data_update = [
                 'tgl_service'            => $this->_convert_date($this->input->post('tgl_service')),
                 'deskripsi_penyelesaian' => $this->input->post('deskripsi_penyelesaian'),
                 'bengkel_nm'             => $this->input->post('bengkel_nm'),
-                'biaya'                  => (float) $clean_biaya, // Pastikan tipe data float
+                'biaya'                  => (float) $clean_biaya, 
                 'status_tiket'           => 2, // Selesai
                 'updated_at'             => date('Y-m-d H:i:s'),
                 'updated_by'             => $this->session->userdata('user_id'),
-                'kondisi_akhir'          => $kondisi_akhir // Simpan history kondisi
+                'kondisi_akhir'          => $kondisi_akhir
             ];
 
-            // --- LOGIKA JADWAL BERIKUTNYA (AUTO CALCULATE +3 BULAN) ---
+            // Simpan nama file foto jika ada yang diupload
+            if ($foto_pengerjaan) {
+                // Pastikan kolom 'pengerjaan_foto' sudah ada di tabel 'dat_service'
+                $data_update['pengerjaan_foto'] = $foto_pengerjaan; 
+            }
+
+            // LOGIKA JADWAL BERIKUTNYA
             $tgl_selesai = date('Y-m-d'); 
             if($this->input->post('tgl_service')) {
                  $tgl_selesai = $this->_convert_date($this->input->post('tgl_service'));
             }
 
-            // Cek Jenis Aset untuk penentuan jadwal
             $asset_detail = $this->db->get_where('mst_asset', ['asset_id' => $asset_id])->row();
             $nama_aset = strtoupper($asset_detail->asset_nm);
             $kode_aset = strtoupper($asset_detail->asset_kd);
 
-            // Cek apakah AC atau Kendaraan (Sesuai logika JS di form modal)
             $isAC = (strpos($nama_aset, 'AC ') !== false || strpos($nama_aset, 'AIR CONDITIONER') !== false || $kode_aset == 'AC');
             $isKendaraan = (strpos($nama_aset, 'MOTOR') !== false || strpos($nama_aset, 'MOBIL') !== false || strpos($nama_aset, 'KENDARAAN') !== false);
 
             if ($isAC || $isKendaraan) {
-                 // Set otomatis 3 bulan kedepan
                  $data_update['tgl_berikutnya'] = date('Y-m-d', strtotime('+3 months', strtotime($tgl_selesai)));
             }
-            // ----------------------------------------------------------
 
             $this->db->update($this->table, $data_update, [$this->pk_id => $id]);
             
-            // Update Kondisi Master Aset (Baik/Rusak Ringan/dll)
+            // Update Kondisi Master Aset
             $this->db->update('mst_asset', ['asset_kondisi' => $kondisi_akhir], ['asset_id' => $asset_id]);
 
         } elseif ($aksi == 'reject') {

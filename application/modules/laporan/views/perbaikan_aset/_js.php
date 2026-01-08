@@ -16,7 +16,7 @@
             d.filter_kategori = $('#main_filter_kategori').val(); 
         }
       },
-      "pageLength": 500, // Sesuai gaya Parameter
+      "pageLength": 500, 
       "columns": [
         // 0. No
         { 
@@ -27,17 +27,16 @@
                 return meta.row + meta.settings._iDisplayStart + 1;
             }
         },
-        // 1. Aksi (REVISI: LOGIKA TOMBOL)
+        // 1. Aksi
         {
           "data": "<?= $this->pk_id ?>", 
           "sortable": false,
-          "className": "text-center", // Center agar rapi
+          "className": "text-center", 
           "width": "5%",
           "render": function(data, type, row, meta) {
             var uri_edit = '<?= site_url($this->uri_mod . '/form_modal/') ?>' + data;
             var uri_delete = '<?= site_url($this->uri_mod . '/delete/') ?>' + data;
             
-            // LOGIKA: Jika Status 0 (Baru) -> Tampilkan Dropdown Edit/Hapus
             if (row.status_tiket == '0') {
                 return '' +
                   '<div class="dropdown">' +
@@ -48,7 +47,6 @@
                   '  </div>' +
                   '</div>';
             } else {
-                // LOGIKA: Jika Status != 0 -> Tampilkan Tombol "Lihat" saja (Terkunci)
                 return '<button class="btn btn-sm btn-icon btn-secondary" title="Sudah Diproses (Terkunci)" onclick="_modal(event, {uri: \'' + uri_edit + '\', size: \'modal-lg\'})"><i class="fas fa-eye"></i></button>';
             }
           }
@@ -78,13 +76,14 @@
               return html;
           }
         },
-        // 5. Keluhan / Masalah
+        // 5. Keluhan / Masalah (REVISI LINK FOTO)
         { 
             "data": "keluhan_deskripsi",
             "render": function(data, type, row) {
                 var html = '<div>' + (data ? data : '-') + '</div>';
                 if(row.keluhan_foto) {
-                    var urlFoto = '<?= base_url("uploads/service/") ?>' + row.keluhan_foto;
+                    // REVISI DISINI: Mengarah ke URL API Project_Magang_API
+                    var urlFoto = 'http://localhost/Project_Magang_API/uploads/keluhan/' + row.keluhan_foto;
                     html += '<div class="mt-1"><a href="'+urlFoto+'" target="_blank" class="text-primary small text-decoration-none"><i class="fas fa-image me-1"></i> Foto Bukti</a></div>';
                 }
                 return html;

@@ -1,4 +1,4 @@
-<form id="form" action="<?= $form_act ?>" method="post" autocomplete="off">
+<form id="form" action="<?= $form_act ?>" method="post" autocomplete="off" enctype="multipart/form-data">
     <div class="card-body">
         
         <div class="alert alert-info bg-azure-lt">
@@ -17,6 +17,15 @@
             </div>
             <div class="mt-2 border-top pt-2">
                 <strong>Keluhan:</strong> <?= $main['keluhan_deskripsi'] ?>
+
+                <?php if(!empty($main['keluhan_foto'])): ?>
+                    <div class="mt-2">
+                        <small class="text-muted d-block mb-1">Foto Bukti (Before):</small>
+                        <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['keluhan_foto'] ?>" target="_blank" class="btn btn-sm btn-light border">
+                            <i class="fas fa-image text-primary me-1"></i> Lihat Foto Kerusakan
+                        </a>
+                    </div>
+                <?php endif; ?>
                 
                 <?php if(!empty($main['kilometer_saat_ini']) && $main['kilometer_saat_ini'] > 0): ?>
                     <br><small class="text-muted"><i class="fas fa-tachometer-alt me-1"></i> Posisi KM Awal: <?= number_format($main['kilometer_saat_ini'],0,',','.') ?></small>
@@ -149,6 +158,14 @@
                 </div>
             </div>
 
+            <div class="mb-2 row">
+                <label class="col-3 col-form-label fw-bold text-success">Foto After (Bukti)</label>
+                <div class="col-9">
+                    <input type="file" name="foto_pengerjaan" class="form-control" accept="image/*">
+                    <small class="text-muted">Upload foto bukti bahwa perbaikan telah selesai.</small>
+                </div>
+            </div>
+
             <div class="modal-footer mt-3">
                 <button type="submit" class="btn btn-success w-100" onclick="$('#aksi_admin').val('finish'); _save(event)">
                     <i class="fas fa-save me-1"></i> Simpan Penyelesaian & Update Stok
@@ -192,6 +209,15 @@
                                 <span>Kondisi Akhir:</span>
                                 <span class="badge bg-green-lt"><?= $main['kondisi_akhir'] ?? '-' ?></span>
                             </div>
+
+                            <?php if(!empty($main['pengerjaan_foto'])): ?>
+                                <div class="mt-3 pt-2 border-top text-center">
+                                    <small class="text-muted d-block mb-1">Bukti Foto After:</small>
+                                    <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['pengerjaan_foto'] ?>" target="_blank" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-image me-1"></i> Lihat Foto Selesai
+                                    </a>
+                                </div>
+                            <?php endif; ?>
 
                             <?php if(!empty($main['tgl_berikutnya'])): ?>
                                 <div class="mt-2 pt-2 border-top text-center">

@@ -80,7 +80,47 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                     </div>
                 </div>
 
-            <?php elseif($main['status_tiket'] == 9): ?>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card bg-light border-success-lt">
+                            <div class="card-body p-2">
+                                <h4 class="text-center text-success mb-3 border-bottom pb-2">Dokumentasi Perbaikan</h4>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="badge bg-secondary mb-2">KONDISI AWAL (BEFORE)</div><br>
+                                        <?php if(!empty($main['keluhan_foto'])): ?>
+                                            <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['keluhan_foto'] ?>" target="_blank">
+                                                <img src="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['keluhan_foto'] ?>" 
+                                                     class="img-fluid rounded shadow-sm border" 
+                                                     style="max-height:150px; object-fit: cover;">
+                                            </a>
+                                        <?php else: ?>
+                                            <div class="p-3 border rounded bg-white text-muted small fst-italic">
+                                                Tidak ada foto
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="col-6 border-start">
+                                        <div class="badge bg-success mb-2">HASIL PERBAIKAN (AFTER)</div><br>
+                                        <?php if(!empty($main['pengerjaan_foto'])): ?>
+                                            <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['pengerjaan_foto'] ?>" target="_blank">
+                                                <img src="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['pengerjaan_foto'] ?>" 
+                                                     class="img-fluid rounded shadow-sm border border-success" 
+                                                     style="max-height:150px; object-fit: cover;">
+                                            </a>
+                                        <?php else: ?>
+                                            <div class="p-3 border rounded bg-white text-muted small fst-italic">
+                                                Belum ada foto bukti
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php elseif($main['status_tiket'] == 9): ?>
                 <div class="text-center py-4 bg-red-lt rounded">
                     <div class="display-6"><i class="fas fa-ban"></i></div>
                     <h3 class="mt-2 text-danger">Laporan Ditolak</h3>
@@ -95,9 +135,9 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                     <strong>Tgl Lapor:</strong> <?= date('d-m-Y', strtotime($main['created_at'])) ?><br>
                     <strong>Keluhan:</strong> <?= $main['keluhan_deskripsi'] ?>
                     
-                    <?php if(!empty($main['keluhan_foto'])): ?>
+                    <?php if(!empty($main['keluhan_foto']) && $main['status_tiket'] != 2): ?>
                         <div class="mt-2">
-                            <a href="<?= base_url("uploads/service/".$main['keluhan_foto']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['keluhan_foto'] ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-image me-1"></i> Lihat Foto Bukti
                             </a>
                         </div>
@@ -138,16 +178,12 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                         <option value="">- Cari Nama / Kode Aset -</option>
                         <?php foreach ($list_asset as $k): ?>
                             <?php 
-                                // LOGIKA UTAMA: DISABLE JIKA SEDANG DIPERBAIKI
-                                // Field 'status_perbaikan' didapat dari Subquery di Model M_perbaikan_aset
                                 $is_repair  = (isset($k['status_perbaikan']) && $k['status_perbaikan'] > 0);
-                                $is_current = (@$main['asset_id'] == $k['asset_id']); // Cek jika sedang edit tiket diri sendiri
+                                $is_current = (@$main['asset_id'] == $k['asset_id']); 
                                 
-                                // Disable jika sedang rusak DAN bukan tiket yang sedang diedit
                                 $disabled = ($is_repair && !$is_current) ? 'disabled' : '';
                                 $info_txt = ($is_repair && !$is_current) ? ' (SEDANG DIPERBAIKI)' : '';
                                 
-                                // Opsional: Beri warna latar agak merah
                                 $style    = ($is_repair && !$is_current) ? 'background-color: #fceceb; color: #d63939;' : '';
                             ?>
                             <option value="<?= $k['asset_id'] ?>" 
@@ -271,7 +307,6 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
     var lastDateValue = ''; 
 
     $(document).ready(function() {
-        // Ambil data aset ke array, simpan juga status disabled-nya
         $('#asset_id option').each(function() {
             if($(this).val() != '') { 
                 allAssets.push({ 
@@ -279,8 +314,8 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                     text: $(this).text(), 
                     katId: $(this).data('kat-id'), 
                     kode: $(this).data('kode'),
-                    disabled: $(this).is(':disabled'), // Simpan status disabled
-                    style: $(this).attr('style') // Simpan style merahnya
+                    disabled: $(this).is(':disabled'), 
+                    style: $(this).attr('style')
                 });
             }
         });
@@ -391,7 +426,6 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
         $.each(allAssets, function(index, item) {
             if (katID === "" || item.katId == katID) {
                 var isSelected = (item.value == currentSelected) ? 'selected' : '';
-                // [PENTING] Tambahkan kembali atribut disabled dan style saat filter ulang
                 var disabledAttr = item.disabled ? 'disabled' : '';
                 var styleAttr = item.style ? 'style="' + item.style + '"' : '';
                 
