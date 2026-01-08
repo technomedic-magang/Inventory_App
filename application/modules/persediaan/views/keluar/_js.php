@@ -10,8 +10,14 @@
       "responsive": true,
       "serverSide": true,
       "ordering": true,
+<<<<<<< HEAD
       "order": [ [2, 'desc'] ], // Urutkan berdasarkan Tanggal
       "ajax": {
+=======
+      "order": [ [2, 'desc'] ], 
+      "ajax": {
+        // [FIX] Site URL
+>>>>>>> repoB/main
         "url": "<?= site_url($this->uri . '/ajax_datatables?n=' . _get('n')) ?>",
         "type": "POST"
       },
@@ -32,7 +38,10 @@
           "sortable": false,
           "render": function(data, type, row, meta) {
             var uri_delete = '<?= site_url($this->uri . '/delete/') ?>' + data;
+<<<<<<< HEAD
             
+=======
+>>>>>>> repoB/main
             return '' +
               '<div class="dropdown">' +
               '  <button class="btn btn-outline-primary btn-sm dropdown-toggle align-text-top" data-bs-toggle="dropdown">' +
@@ -49,6 +58,10 @@
               '</div>';
           }
         },
+<<<<<<< HEAD
+=======
+        // [FIX] Kolom Tanggal
+>>>>>>> repoB/main
         {
           "data": "keluar_tgl",
           "className": "text-left",
@@ -65,10 +78,14 @@
              return `<span class="badge bg-orange-lt">${data}</span>`;
           }
         },
+<<<<<<< HEAD
         {
           "data": "keperluan_jenis",
           "className": "text-left"
         },
+=======
+        { "data": "keperluan_jenis", "className": "text-left" },
+>>>>>>> repoB/main
         {
           "data": "penerima_nm",
           "className": "text-left",
@@ -76,10 +93,14 @@
               return data ? data : '<span class="text-muted">-</span>';
           }
         },
+<<<<<<< HEAD
         {
           "data": "barang_nm",
           "className": "text-left fw-bold"
         },
+=======
+        { "data": "barang_nm", "className": "text-left fw-bold" },
+>>>>>>> repoB/main
         {
           "data": "kategori_nm",
           "className": "text-left",
@@ -94,6 +115,7 @@
               return parseFloat(data).toLocaleString('id-ID');
           }
         },
+<<<<<<< HEAD
         {
           "data": "satuan_nm",
           "className": "text-left"
@@ -102,6 +124,10 @@
           "data": "keterangan_txt",
           "className": "text-left small text-muted"
         }
+=======
+        { "data": "satuan_nm", "className": "text-left" },
+        { "data": "keterangan_txt", "className": "text-left small text-muted" }
+>>>>>>> repoB/main
       ],
     });
   });

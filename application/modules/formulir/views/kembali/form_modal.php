@@ -28,7 +28,14 @@
     <div class="mb-1 row">
       <label class="col-lg-3 col-md-6 col-form-label required">Tanggal Kembali</label>
       <div class="col-lg-8 col-md-6">
+<<<<<<< HEAD
         <input type="date" name="transaksi_tgl" id="transaksi_tgl" class="form-control" value="<?= date('Y-m-d') ?>" required>
+=======
+        <input type="text" name="transaksi_tgl" id="transaksi_tgl" 
+               class="form-control datepicker-notauto" 
+               value="<?= date('d-m-Y') ?>" 
+               required placeholder="dd-mm-yyyy">
+>>>>>>> repoB/main
       </div>
     </div>
     
@@ -73,7 +80,10 @@
       </div>
     </div>
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> repoB/main
     <div class="border-dotted mt-3"></div>
 
     <div class="row mt-2">
@@ -90,9 +100,45 @@
 </form>
 
 <script>
+<<<<<<< HEAD
     // Simpan data item global agar mudah diakses
     var itemsData = {};
 
+=======
+    var itemsData = {};
+    var lastDateValue = ''; 
+
+    $(document).ready(function() {
+        // Jalankan Watcher Auto Number
+        startDateWatcher();
+    });
+
+    // --- WATCHER AUTO NUMBER ---
+    function startDateWatcher() {
+        setInterval(function() {
+            var tglInput = $('#transaksi_tgl');
+            var tglVal = tglInput.val(); // Format dd-mm-yyyy
+
+            if (tglVal && tglVal.length == 10 && tglVal !== lastDateValue) {
+                lastDateValue = tglVal; 
+
+                $.ajax({ 
+                    url: '<?= site_url($this->uri_mod . "/get_no_transaksi_ajax?n=" . _get("n")) ?>', 
+                    type: 'POST', 
+                    data: { tanggal: tglVal }, 
+                    dataType: 'json',
+                    success: function(res) { 
+                        if(res && res.new_no) {
+                            $('#transaksi_no').val(res.new_no);
+                        }
+                    }
+                });
+            }
+        }, 100); 
+    }
+
+    // --- Load Barang via AJAX ---
+>>>>>>> repoB/main
     function loadItems() {
         var pid = $('#pemakaian_id').val();
         var $itemSelect = $('#item_select');
@@ -108,19 +154,44 @@
         }
 
         $.ajax({
+<<<<<<< HEAD
             url: '<?= $this->uri . "/get_items_pemakaian?n=" . _get("n") ?>',
             type: 'POST', data: { pemakaian_id: pid }, dataType: 'json',
             success: function(data) {
                 itemsData = {}; // Reset data
                 var ops = '<option value="">- Pilih Barang yang Dikembalikan -</option>';
+=======
+            url: '<?= site_url($this->uri_mod . "/get_items_pemakaian?n=" . _get("n")) ?>',
+            type: 'POST', data: { pemakaian_id: pid }, dataType: 'json',
+            success: function(data) {
+                itemsData = {}; 
+                var ops = '<option value="">- Pilih Barang yang Dikembalikan -</option>';
+                
+>>>>>>> repoB/main
                 if (data.length === 0) {
                     ops = '<option value="">Semua barang sudah lunas/kembali</option>';
                 } else {
                     $.each(data, function(i, item) {
+<<<<<<< HEAD
                         // Simpan data lengkap item ke object global dengan key ID
                         itemsData[item.pemakaian_detail_id] = item;
                         ops += `<option value="${item.pemakaian_detail_id}">
                                 ${item.asset_nm} (${item.asset_kd}) - Sisa: ${parseFloat(item.sisa_qty)}
+=======
+                        itemsData[item.pemakaian_detail_id] = item;
+                        
+                        // [MODIFIKASI] Tampilkan Info Lengkap (Merek, Tipe, Spek)
+                        var detailInfo = [];
+                        if (item.merk) detailInfo.push(item.merk);
+                        if (item.merek_tipe) detailInfo.push(item.merek_tipe);
+                        if (item.spesifikasi) detailInfo.push(item.spesifikasi);
+                        if (item.nopol) detailInfo.push('[' + item.nopol + ']');
+                        
+                        var detailStr = detailInfo.length > 0 ? ' (' + detailInfo.join(' - ') + ')' : '';
+
+                        ops += `<option value="${item.pemakaian_detail_id}">
+                                ${item.asset_nm}${detailStr} - Sisa Pinjam: ${parseFloat(item.sisa_qty)}
+>>>>>>> repoB/main
                                 </option>`;
                     });
                 }
@@ -129,6 +200,10 @@
         });
     }
 
+<<<<<<< HEAD
+=======
+    // --- Isi Data Hidden Saat Barang Dipilih ---
+>>>>>>> repoB/main
     function fillItemData() {
         var id = $('#item_select').val();
         if(!id) {
@@ -138,20 +213,34 @@
         
         var item = itemsData[id];
         if(item) {
+<<<<<<< HEAD
             // Isi hidden input
             $('#asset_id').val(item.asset_id);
             $('#gudang_id').val(item.gudang_id); // Kembalikan ke gudang asal
             
             // Set max qty
+=======
+            $('#asset_id').val(item.asset_id);
+            $('#gudang_id').val(item.gudang_id); 
+            
+>>>>>>> repoB/main
             var sisa = parseFloat(item.sisa_qty);
             $('#max_qty').val(sisa);
             $('#kembali_qty').val(sisa).prop('disabled', false).attr('max', sisa);
             
+<<<<<<< HEAD
             $('#item_info').text('Gudang Asal: ' + item.gudang_nm);
         }
     }
 
     // Validasi Max Qty
+=======
+            $('#item_info').text('Dikembalikan ke: ' + item.gudang_nm);
+        }
+    }
+
+    // --- Validasi Stok/Sisa ---
+>>>>>>> repoB/main
     $('#kembali_qty').on('change keyup', function() {
         var max = parseFloat($('#max_qty').val());
         var val = parseFloat($(this).val());
@@ -160,6 +249,7 @@
             $(this).val(max);
         }
     });
+<<<<<<< HEAD
 
     // Auto Number
     $(document).on('change', '#transaksi_tgl', function() {
@@ -170,4 +260,6 @@
             success: function(res) { if(res.new_no) $('#transaksi_no').val(res.new_no); } 
         });
     });
+=======
+>>>>>>> repoB/main
 </script>

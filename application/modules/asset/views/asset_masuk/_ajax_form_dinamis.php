@@ -16,7 +16,11 @@
                     <input type="number" name="kustom[<?= $attr['atribut_id'] ?>]" class="form-control" required>
 
                 <?php elseif ($attr['atribut_tipe'] == 'tanggal'): ?>
+<<<<<<< HEAD
                     <input type="date" name="kustom[<?= $attr['atribut_id'] ?>]" class="form-control" required>
+=======
+                    <input type="teks" name="kustom[<?= $attr['atribut_id'] ?>]" class="form-control" required>
+>>>>>>> repoB/main
 
                 <?php elseif ($attr['atribut_tipe'] == 'textarea'): ?>
                     <textarea name="kustom[<?= $attr['atribut_id'] ?>]" class="form-control" rows="2" required></textarea>

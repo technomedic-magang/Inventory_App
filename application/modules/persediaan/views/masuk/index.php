@@ -15,8 +15,13 @@
         <div class="col-auto ms-auto d-print-none">
           <div class="btn-list">
             <a href="javascript:void(0)" 
+<<<<<<< HEAD
                onclick="_modal(event, {uri: '<?= site_url($this->uri . '/form_modal') ?>', size: 'modal-lg', position: 'normal'})" 
                class="btn btn-primary d-sm-inline-block">
+=======
+              onclick="_modal(event, {uri: '<?= site_url($this->uri . '/form_modal') ?>', size: 'modal-lg', position: 'normal'})" 
+              class="btn btn-primary d-sm-inline-block">
+>>>>>>> repoB/main
                 <i class="fas fa-plus me-1"></i> Tambah Stok (Belanja)
             </a>
           </div>

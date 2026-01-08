@@ -34,6 +34,7 @@ class Persediaan_keluar extends MY_Controller
         echo json_encode(['status'=>true, 'stok'=>$stok]);
     }
 
+<<<<<<< HEAD
     // --- AJAX: Generate Nomor Otomatis (GET) ---
     public function get_penomoran_otomatis()
     {
@@ -41,15 +42,39 @@ class Persediaan_keluar extends MY_Controller
         $tanggal     = $this->input->get('tanggal');
         
         // Ambil Kode Kategori (Jika user memilih kategori, kita bisa pakai kodenya. Jika tidak, default OUT)
+=======
+    // --- AJAX: Generate Nomor Otomatis ---
+    public function get_penomoran_otomatis()
+    {
+        $kategori_id = $this->input->get('kategori_id'); 
+        $tgl_raw     = $this->input->get('tanggal');
+        
+        // [FIX] Konversi Tanggal (dd-mm-yyyy -> yyyy-mm-dd)
+        $tgl_sql = $tgl_raw;
+        if (strpos($tgl_raw, '-') !== false) {
+            $tgl_sql = date('Y-m-d', strtotime($tgl_raw));
+        }
+
+        // Ambil Kode Kategori
+>>>>>>> repoB/main
         $kode_kat = 'OUT'; 
         if(!empty($kategori_id)) {
             $kategori = $this->db->get_where('mst_kategori_persediaan', ['kategori_id' => $kategori_id])->row();
             if($kategori && isset($kategori->kategori_kd)) {
+<<<<<<< HEAD
                 $kode_kat = 'OUT-' . $kategori->kategori_kd; // Contoh: OUT-ATK
             }
         }
 
         $new_no = $this->m_persediaan_keluar->get_nomor_urut($kode_kat, $tanggal);
+=======
+                $kode_kat = 'OUT-' . $kategori->kategori_kd; 
+            }
+        }
+
+        // Generate nomor pakai tanggal SQL
+        $new_no = $this->m_persediaan_keluar->get_nomor_urut($kode_kat, $tgl_sql);
+>>>>>>> repoB/main
         
         header('Content-Type: application/json');
         echo json_encode(['status' => true, 'no_otomatis' => $new_no]);
@@ -58,6 +83,11 @@ class Persediaan_keluar extends MY_Controller
     public function form_modal($id = null)
     {
         $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
+<<<<<<< HEAD
+=======
+        
+        // [FIX] Site URL
+>>>>>>> repoB/main
         $d['form_act'] = site_url($this->uri . '/save' . ($id ? '/' . $id : ''));
 
         if ($id) {
@@ -79,11 +109,18 @@ class Persediaan_keluar extends MY_Controller
 
         $d['list_satuan'] = $this->db->where('deleted_st', 0)->order_by('satuan_nm', 'ASC')->get('mst_satuan')->result_array();
 
+<<<<<<< HEAD
         // [BARU] Ambil Data Pegawai
         $d['list_pegawai'] = $this->db->select('pegawai_id, pegawai_nm')
                                       ->from('mst_pegawai')
                                       ->where('deleted_st', 0)
                                       ->where('active_st', 1) // Hanya pegawai aktif
+=======
+        $d['list_pegawai'] = $this->db->select('pegawai_id, pegawai_nm')
+                                      ->from('mst_pegawai')
+                                      ->where('deleted_st', 0)
+                                      ->where('active_st', 1) 
+>>>>>>> repoB/main
                                       ->order_by('pegawai_nm', 'ASC')
                                       ->get()->result_array();
 
@@ -98,13 +135,25 @@ class Persediaan_keluar extends MY_Controller
         if (empty($d['persediaan_id'])) { _json(['status' => false, 'msg' => 'Barang wajib dipilih.']); return; }
         if (empty($d['keluar_qty']) || $d['keluar_qty'] <= 0) { _json(['status' => false, 'msg' => 'Jumlah harus lebih dari 0.']); return; }
 
+<<<<<<< HEAD
         // 1. VALIDASI STOK (PENTING!)
         // Cek stok di database saat ini juga sebelum simpan
+=======
+        // [FIX] Konversi Tanggal
+        $tgl_raw = $d['keluar_tgl'];
+        $tgl_sql = $tgl_raw;
+        if (strpos($tgl_raw, '-') !== false) {
+            $tgl_sql = date('Y-m-d', strtotime($tgl_raw));
+        }
+
+        // 1. VALIDASI STOK
+>>>>>>> repoB/main
         $stok_sekarang = $this->m_persediaan_keluar->get_stok_item($d['persediaan_id']);
         if ($d['keluar_qty'] > $stok_sekarang) {
              _json(['status' => false, 'msg' => 'Gagal! Stok tidak mencukupi. Sisa stok: ' . $stok_sekarang]); return;
         }
 
+<<<<<<< HEAD
         // 2. Generate No Transaksi Final
         $no_struk = $d['struk_no'];
         if (empty($no_struk) || strpos($no_struk, '-AUTO') !== false) {
@@ -112,11 +161,24 @@ class Persediaan_keluar extends MY_Controller
              $kategori = $this->db->get_where('mst_kategori_persediaan', ['kategori_id' => $d['kategori_temp']])->row();
              $kode_kat = ($kategori) ? 'OUT-' . $kategori->kategori_kd : 'OUT';
              $no_struk = $this->m_persediaan_keluar->get_nomor_urut($kode_kat, $d['keluar_tgl']);
+=======
+        // 2. Generate No Transaksi
+        $no_struk = $d['struk_no'];
+        if (empty($no_struk) || strpos($no_struk, '-AUTO') !== false) {
+             $kategori = $this->db->get_where('mst_kategori_persediaan', ['kategori_id' => $d['kategori_temp']])->row();
+             $kode_kat = ($kategori) ? 'OUT-' . $kategori->kategori_kd : 'OUT';
+             // Gunakan tanggal SQL
+             $no_struk = $this->m_persediaan_keluar->get_nomor_urut($kode_kat, $tgl_sql);
+>>>>>>> repoB/main
         }
 
         $data_header = [
             'struk_no'       => $no_struk,
+<<<<<<< HEAD
             'keluar_tgl'     => $d['keluar_tgl'],
+=======
+            'keluar_tgl'     => $tgl_sql, // Masuk DB YYYY-MM-DD
+>>>>>>> repoB/main
             'keperluan_jenis'=> $d['keperluan_jenis'],
             'penerima_nm'    => $d['penerima_nm'],
             'keterangan_txt' => $d['keterangan_txt'],
@@ -143,8 +205,12 @@ class Persediaan_keluar extends MY_Controller
             $status = $this->m_persediaan_keluar->simpan_pemakaian($data_header, [$data_detail]);
 
             if ($status) {
+<<<<<<< HEAD
                 $redirect_url = site_url($this->uri); 
                 _json(_response('01', $redirect_url));
+=======
+                _json(_response('01', site_url($this->uri)));
+>>>>>>> repoB/main
             } else {
                 _json(['status' => false, 'msg' => 'Gagal menyimpan transaksi.']);
             }
@@ -156,6 +222,10 @@ class Persediaan_keluar extends MY_Controller
     public function delete($id = null) {
         $w = [$this->pk_id => $id];
         DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
+<<<<<<< HEAD
         _json(_response('03', $this->uri));
+=======
+        _json(_response('03', site_url($this->uri)));
+>>>>>>> repoB/main
     }
 }

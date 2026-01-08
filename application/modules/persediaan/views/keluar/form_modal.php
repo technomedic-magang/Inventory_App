@@ -6,7 +6,15 @@
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label required">Tanggal Keluar</label>
             <div class="col-lg-9 col-md-8">
+<<<<<<< HEAD
                 <input type="date" id="keluar_tgl" name="keluar_tgl" class="form-control" value="<?= @$main['keluar_tgl'] ?? date('Y-m-d') ?>" required onchange="updateNoTransaksi()">
+=======
+                <input type="text" id="keluar_tgl" name="keluar_tgl" 
+                       class="form-control datepicker-notauto" 
+                       value="<?= @$main['keluar_tgl'] ? date('d-m-Y', strtotime($main['keluar_tgl'])) : date('d-m-Y') ?>" 
+                       required placeholder="dd-mm-yyyy">
+                <small class="text-muted" style="font-size: 10px;">*Klik tanggal untuk memilih</small>
+>>>>>>> repoB/main
             </div>
         </div>
 
@@ -131,14 +139,49 @@
         width: '100%'
     };
 
+<<<<<<< HEAD
+=======
+    var lastDateValue = '';
+
+>>>>>>> repoB/main
     $(document).ready(function() {
         $('.select2-modal').select2(select2Options);
         
         // Init awal
         filterBarangByKategori();
         if($('#struk_no').val() == '') { updateNoTransaksi(); }
+<<<<<<< HEAD
     });
 
+=======
+
+        // 1. Jalankan Watcher (Untuk Auto Number)
+        dateWatcher();
+
+        // 2. LOGIKA SINGLE KLIK (Pilih Tanggal = Auto Tutup)
+        // Kita mendeteksi klik pada elemen hari (class umum library datepicker)
+        $('body').on('click', '.day-item, .flatpickr-day, .datepicker-cell, td.day', function(e) {
+            // Beri jeda sangat singkat (50ms) agar library sempat mengisi nilai ke input
+            setTimeout(function() {
+                // Paksa input kehilangan fokus (blur)
+                // Ini memerintahkan Date Picker untuk "Selesai" dan menutup kalender
+                $('#keluar_tgl').blur(); 
+            }, 50);
+        });
+    });
+
+    // --- WATCHER AUTO NUMBER ---
+    function dateWatcher() {
+        setInterval(function() {
+            var tgl = $('#keluar_tgl').val();
+            if (tgl && tgl.length == 10 && tgl !== lastDateValue) {
+                lastDateValue = tgl;
+                updateNoTransaksi(); // Update preview nomor
+            }
+        }, 100);
+    }
+
+>>>>>>> repoB/main
     function onFilterChange() {
         filterBarangByKategori();
         updateNoTransaksi();
@@ -148,10 +191,14 @@
         var katID = $('#filter_kategori').val();
         var $selectBarang = $('#persediaan_id');
         
+<<<<<<< HEAD
         // Reset Barang
         $selectBarang.val('').trigger('change');
         
         // Reset Info Stok
+=======
+        $selectBarang.val('').trigger('change');
+>>>>>>> repoB/main
         $('#info_stok').val('0');
         $('#info_satuan').text('-');
 
@@ -168,17 +215,26 @@
         $selectBarang.select2(select2Options);
     }
 
+<<<<<<< HEAD
     // Cek Stok saat barang dipilih
+=======
+>>>>>>> repoB/main
     function cekStok(el) {
         var $opt = $(el).find(':selected');
         var stok = parseFloat($opt.data('stok')) || 0;
         var satID = $opt.data('satuan');
         
+<<<<<<< HEAD
         // Update Info Stok UI
         $('#info_stok').val(stok.toLocaleString('id-ID'));
         $('#satuan_id').val(satID); 
         
         // Reset Qty & Validasi Limit
+=======
+        $('#info_stok').val(stok.toLocaleString('id-ID'));
+        $('#satuan_id').val(satID); 
+        
+>>>>>>> repoB/main
         $('#keluar_qty').attr('max', stok);
         $('#keluar_qty').val('');
         
@@ -186,14 +242,21 @@
         $('#btn_simpan').prop('disabled', false);
     }
 
+<<<<<<< HEAD
     // Validasi Real-time saat ketik qty
+=======
+>>>>>>> repoB/main
     $('#keluar_qty').on('input', function() {
         var val = parseFloat($(this).val());
         var max = parseFloat($(this).attr('max')) || 0;
         
         if(val > max) {
             $('#alert_stok').removeClass('d-none');
+<<<<<<< HEAD
             $('#btn_simpan').prop('disabled', true); // Kunci tombol simpan
+=======
+            $('#btn_simpan').prop('disabled', true); 
+>>>>>>> repoB/main
         } else {
             $('#alert_stok').addClass('d-none');
             $('#btn_simpan').prop('disabled', false);
@@ -202,6 +265,7 @@
 
     function updateNoTransaksi() {
         var $kat = $('#filter_kategori option:selected');
+<<<<<<< HEAD
         // Ambil kode dari attribute data-kode, default OUT jika kosong
         var katKode = $kat.data('kode') || 'OUT'; 
         var tgl = $('#keluar_tgl').val();
@@ -209,6 +273,20 @@
         if(tgl) {
             var formattedDate = tgl.replace(/-/g, '.'); 
             $('#struk_no').val(katKode + '-' + formattedDate + '-AUTO');
+=======
+        var katKode = $kat.data('kode') || 'OUT'; 
+        var tgl = $('#keluar_tgl').val();
+        
+        if(tgl && tgl.length == 10) {
+            // Parsing dd-mm-yyyy -> yyyy.mm.dd
+            var parts = tgl.split('-');
+            if (parts.length == 3) {
+                var formattedDate = parts[2] + '.' + parts[1] + '.' + parts[0];
+                $('#struk_no').val(katKode + '-' + formattedDate + '-AUTO');
+            }
+        } else {
+            $('#struk_no').val('');
+>>>>>>> repoB/main
         }
     }
 </script>

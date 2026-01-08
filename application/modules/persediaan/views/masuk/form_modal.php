@@ -1,6 +1,10 @@
 <form id="form" action="<?= $form_act ?>" method="post" autocomplete="off">
     <div class="modal-body">
         <h4 class="text-primary mb-3">Informasi Transaksi</h4>
+<<<<<<< HEAD
+=======
+        
+>>>>>>> repoB/main
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label required">Kategori</label>
             <div class="col-lg-9 col-md-8">
@@ -14,12 +18,26 @@
                 </select>
             </div>
         </div>
+<<<<<<< HEAD
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label required">Tanggal</label>
             <div class="col-lg-9 col-md-8">
                 <input type="date" id="beli_tgl" name="beli_tgl" class="form-control" value="<?= @$main['beli_tgl'] ?? date('Y-m-d') ?>" required onchange="updateNoTransaksi()">
             </div>
         </div>
+=======
+        
+        <div class="mb-1 row">
+            <label class="col-lg-3 col-md-4 col-form-label required">Tanggal</label>
+            <div class="col-lg-9 col-md-8">
+                <input type="text" id="beli_tgl" name="beli_tgl" 
+                       class="form-control datepicker-notauto" 
+                       value="<?= @$main['beli_tgl'] ? date('d-m-Y', strtotime($main['beli_tgl'])) : date('d-m-Y') ?>" 
+                       required placeholder="dd-mm-yyyy">
+            </div>
+        </div>
+        
+>>>>>>> repoB/main
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label">No. Transaksi</label>
             <div class="col-lg-9 col-md-8">
@@ -118,12 +136,39 @@
         }
     };
 
+<<<<<<< HEAD
     $(document).ready(function() {
         $('.select2-modal').select2(select2Options);
         filterBarangByKategori(); 
         if($('#struk_no').val() == '') { updateNoTransaksi(); }
     });
 
+=======
+    var lastDateValue = '';
+
+    $(document).ready(function() {
+        $('.select2-modal').select2(select2Options);
+        filterBarangByKategori(); 
+        
+        // Cek awal
+        if($('#struk_no').val() == '') { updateNoTransaksi(); }
+
+        // Watcher Tanggal (Update Nomor saat tanggal berubah)
+        dateWatcher();
+    });
+
+    // --- FUNGSI WATCHER ---
+    function dateWatcher() {
+        setInterval(function() {
+            var tgl = $('#beli_tgl').val();
+            if (tgl && tgl.length == 10 && tgl !== lastDateValue) {
+                lastDateValue = tgl;
+                updateNoTransaksi(); // Update preview nomor
+            }
+        }, 100);
+    }
+
+>>>>>>> repoB/main
     function onFilterChange() {
         filterBarangByKategori();
         updateNoTransaksi();
@@ -155,6 +200,7 @@
         if (rua) $('#lokasi_ruang').val(rua);
     }
 
+<<<<<<< HEAD
     // --- PREVIEW NOMOR (Tanpa AJAX) ---
     function updateNoTransaksi() {
         var $kat = $('#filter_kategori option:selected');
@@ -169,6 +215,26 @@
             
             // Tampilkan Preview: KODE-TANGGAL-AUTO
             $('#struk_no').val(katKode + '-' + formattedDate + '-AUTO');
+=======
+    // --- PREVIEW NOMOR (JS LOGIC) ---
+    function updateNoTransaksi() {
+        var $kat = $('#filter_kategori option:selected');
+        var katID = $kat.val();
+        var katKode = $kat.data('kode') || 'GEN';
+        var tgl = $('#beli_tgl').val(); // Format dd-mm-yyyy
+
+        if(katID && tgl && tgl.length == 10) {
+            // [FIX] Parsing dd-mm-yyyy -> yyyy.mm.dd
+            // Split berdasarkan '-'
+            var parts = tgl.split('-');
+            if (parts.length == 3) {
+                // parts[0] = dd, parts[1] = mm, parts[2] = yyyy
+                var formattedDate = parts[2] + '.' + parts[1] + '.' + parts[0];
+                
+                // Tampilkan Preview
+                $('#struk_no').val(katKode + '-' + formattedDate + '-AUTO');
+            }
+>>>>>>> repoB/main
         } else {
             $('#struk_no').val('');
         }

@@ -13,10 +13,20 @@
       </div>
     </div>
 
+<<<<<<< HEAD
     <div class="mb-1 row">
       <label class="col-lg-3 col-md-6 col-form-label required">Tanggal Masuk</label>
       <div class="col-lg-8 col-md-6">
         <input type="date" name="transaksi_tgl" id="transaksi_tgl_input" class="form-control" value="<?= date('Y-m-d') ?>" required>
+=======
+    <div class="mb-2 row">
+      <label class="col-lg-3 col-form-label required">Tanggal Masuk</label>
+      <div class="col-lg-8 col-md-6">
+        <input type="text" name="transaksi_tgl" id="transaksi_tgl" 
+            class="form-control datepicker-notauto" 
+            value="<?= date('d-m-Y') ?>" 
+            required placeholder="dd-mm-yyyy">
+>>>>>>> repoB/main
       </div>
     </div>
 
@@ -71,6 +81,7 @@
 </form>
 
 <script>
+<<<<<<< HEAD
     // 1. Ktika Kategori Dipilih -> Load Aset
     $('#filter_kategori_id').change(function() {
         var kategori_id = $(this).val();
@@ -144,6 +155,101 @@
         var tgl = $('#transaksi_tgl_input').val();
         var asset_id = $('#asset_id_select').val();
         
+=======
+    var lastDateValue = ''; 
+
+    $(document).ready(function() {
+        
+        // --- 1. JALANKAN WATCHER TANGGAL (Sama seperti Mutasi/Pengembalian) ---
+        // Ini menggantikan manual Litepicker agar konsisten
+        startDateWatcher();
+
+        // --- 2. LOGIKA PILIH KATEGORI & ASET ---
+        $('#filter_kategori_id').change(function() {
+            var kategori_id = $(this).val();
+            var $assetSelect = $('#asset_id_select');
+            
+            // Reset Form
+            $assetSelect.html('<option value="">Loading...</option>').prop('disabled', true);
+            $('#area-form-dinamis').html('');
+            $('#transaksi_no').val('');
+
+            if (!kategori_id) {
+                $assetSelect.html('<option value="">-- Pilih Kategori Terlebih Dahulu --</option>');
+                return;
+            }
+
+            // AJAX Load Asset
+            $.ajax({
+                url: '<?= $this->uri . "/get_list_asset_by_kategori?n=" . _get("n") ?>',
+                type: 'POST',
+                data: { kategori_id: kategori_id },
+                dataType: 'json',
+                success: function(data) {
+                    var html = '<option value="">-- Pilih Aset --</option>';
+                    if (data.length > 0) {
+                        $.each(data, function(i, item) {
+                            html += `<option value="${item.asset_id}" 
+                                             data-sku="${item.asset_kd}" 
+                                             data-kategori_kd="${item.kategori_kd}">
+                                     ${item.asset_nm} (${item.asset_kd})
+                                     </option>`;
+                        });
+                    } else {
+                        html = '<option value="">(Tidak ada aset baru di kategori ini)</option>';
+                    }
+                    $assetSelect.html(html).prop('disabled', false);
+                }
+            });
+
+            // AJAX Load Form Dinamis (Lokasi)
+            var $optionKat = $(this).find(':selected');
+            var kategori_kd = $optionKat.data('kode');
+            
+            var kategori_wajib_lokasi = ['EL', 'MB', 'KP', 'ACC', 'PB', 'K2', 'K4', 'PRN', 'LCD'];
+
+            if (kategori_kd && kategori_wajib_lokasi.includes(kategori_kd)) {
+                $('#area-form-dinamis').html('<div class="text-center small p-2">Memuat form lokasi...</div>');
+                $.ajax({
+                    url: '<?= $this->uri . "/get_form_dinamis_by_kategori?n=" . _get("n") ?>',
+                    type: 'POST', data: { kategori_kd: kategori_kd }, dataType: 'json',
+                    success: function(res) {
+                        if(res.html) $('#area-form-dinamis').html(res.html);
+                        else $('#area-form-dinamis').html('');
+                    }
+                });
+            }
+        });
+
+        // 3. Saat Aset Dipilih -> Update SKU Transaksi
+        $('#asset_id_select').change(function() {
+            updateTransaksiNo();
+        });
+    });
+
+    // --- FUNGSI WATCHER TANGGAL (PENGGANTI ON CHANGE) ---
+    // Fungsi ini mengecek input tanggal setiap 200ms
+    // Jika berubah (dipilih dari kalender), langsung request nomor baru
+    function startDateWatcher() {
+        setInterval(function() {
+            var tglInput = $('#transaksi_tgl');
+            var tglVal = tglInput.val(); // Format dd-mm-yyyy
+
+            if (tglVal && tglVal.length == 10 && tglVal !== lastDateValue) {
+                lastDateValue = tglVal; 
+                // Trigger update jika tanggal berubah
+                updateTransaksiNo();
+            }
+        }, 200); 
+    }
+
+    // Fungsi AJAX Get Auto Number
+    function updateTransaksiNo() {
+        var tgl = $('#transaksi_tgl').val();
+        var asset_id = $('#asset_id_select').val();
+        
+        // Hanya request jika Tanggal & Aset sudah terisi
+>>>>>>> repoB/main
         if (tgl && asset_id) {
             $('#transaksi_no').val('Generating...');
             $.ajax({
@@ -152,8 +258,19 @@
                 data: { tanggal: tgl, asset_id: asset_id }, 
                 dataType: 'json',
                 success: function(response) {
+<<<<<<< HEAD
                     if(response.status) $('#transaksi_no').val(response.transaksi_no);
                     else $('#transaksi_no').val(response.transaksi_no || 'Error');
+=======
+                    if(response.status) {
+                        $('#transaksi_no').val(response.transaksi_no);
+                    } else {
+                        $('#transaksi_no').val(response.transaksi_no || 'Error');
+                    }
+                },
+                error: function() {
+                    $('#transaksi_no').val('Gagal mengambil nomor');
+>>>>>>> repoB/main
                 }
             });
         }

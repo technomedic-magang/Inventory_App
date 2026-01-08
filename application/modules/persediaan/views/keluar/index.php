@@ -15,8 +15,13 @@
         <div class="col-auto ms-auto d-print-none">
           <div class="btn-list">
             <a href="javascript:void(0)" 
+<<<<<<< HEAD
                onclick="_modal(event, {uri: '<?= site_url($this->uri . '/form_modal') ?>', size: 'modal-lg', position: 'normal'})" 
                class="btn btn-danger d-sm-inline-block">
+=======
+              onclick="_modal(event, {uri: '<?= site_url($this->uri . '/form_modal') ?>', size: 'modal-lg', position: 'normal'})" 
+              class="btn btn-danger d-sm-inline-block">
+>>>>>>> repoB/main
                 <i class="fas fa-minus me-1"></i> Catat Barang Keluar
             </a>
           </div>

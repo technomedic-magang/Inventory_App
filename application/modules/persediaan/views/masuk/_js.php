@@ -12,6 +12,10 @@
       "ordering": true,
       "order": [ [2, 'desc'] ], 
       "ajax": {
+<<<<<<< HEAD
+=======
+        // [FIX] Site URL
+>>>>>>> repoB/main
         "url": "<?= site_url($this->uri . '/ajax_datatables?n=' . _get('n')) ?>",
         "type": "POST"
       },
@@ -52,6 +56,10 @@
           "data": "beli_tgl",
           "className": "text-left",
           "render": function(data) {
+<<<<<<< HEAD
+=======
+             // [FIX] Format dd-mm-yyyy
+>>>>>>> repoB/main
              if(!data) return '-';
              return data.split('-').reverse().join('-');
           }
@@ -60,11 +68,15 @@
           "data": "struk_no",
           "className": "text-left",
           "render": function(data) {
+<<<<<<< HEAD
              // [PERBAIKAN DI SINI]
              // Cek jika data null atau kosong, return tanda strip
              if (!data) return '<span class="text-muted">-</span>';
 
              // Jika data ada, baru jalankan startsWith
+=======
+             if (!data) return '<span class="text-muted">-</span>';
+>>>>>>> repoB/main
              var color = (data.startsWith('AUTO')) ? 'secondary' : 'blue';
              return `<span class="badge bg-${color}-lt">${data}</span>`;
           }

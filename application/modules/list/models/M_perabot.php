@@ -7,6 +7,10 @@ class M_perabot extends CI_Model
 
     public function load_datatables()
     {
+<<<<<<< HEAD
+=======
+        // menggabungkan data Aset, Atribut Kustom, dan Lokasi
+>>>>>>> repoB/main
         $query = "
             SELECT 
                 a.asset_id,
@@ -17,17 +21,24 @@ class M_perabot extends CI_Model
                 a.asset_ket,
                 k.kategori_nm,
                 
+<<<<<<< HEAD
                 -- [BARU]
                 a.asset_thn_beli,
                 a.asset_bln_beli,
 
+=======
+>>>>>>> repoB/main
                 -- Ambil Atribut Kustom
                 v_merek.value_isi as merek_spek,
                 v_tgl.value_isi as tgl_pembelian_kustom,
                 v_ruang.value_isi as ruangan,
                 v_lantai.value_isi as lantai,
 
+<<<<<<< HEAD
                 -- Ambil Penanggung Jawab
+=======
+                -- Ambil Penanggung Jawab (PIC Gudang / Peminjam)
+>>>>>>> repoB/main
                 COALESCE(pg.pegawai_nm, g.pic_nm, '-') as penanggungjawab,
                 CASE 
                     WHEN pg.pegawai_id IS NOT NULL THEN COALESCE(j.jabatan_nm, '-')
@@ -37,9 +48,18 @@ class M_perabot extends CI_Model
 
             FROM mst_asset a
             
+<<<<<<< HEAD
             JOIN mst_kategori k ON a.kategori_id = k.kategori_id 
                  AND k.kategori_kd = 'PB'
             
+=======
+            -- [FILTER KUNCI]
+            -- Kategori 'PB' (Perabot, ID 11)
+            JOIN mst_kategori k ON a.kategori_id = k.kategori_id 
+                 AND k.kategori_kd = 'PB'
+            
+            -- JOIN Atribut Kustom (Merek, Tgl, Ruang, Lantai)
+>>>>>>> repoB/main
             LEFT JOIN mst_kategori_atribut attr_merek ON attr_merek.kategori_id = a.kategori_id AND attr_merek.atribut_label LIKE 'Merek%'
             LEFT JOIN dat_asset_value v_merek ON v_merek.asset_id = a.asset_id AND v_merek.atribut_id = attr_merek.atribut_id
 
@@ -52,23 +72,39 @@ class M_perabot extends CI_Model
             LEFT JOIN mst_kategori_atribut attr_lantai ON attr_lantai.kategori_id = a.kategori_id AND attr_lantai.atribut_label = 'Lantai'
             LEFT JOIN dat_asset_value v_lantai ON v_lantai.asset_id = a.asset_id AND v_lantai.atribut_id = attr_lantai.atribut_id
             
+<<<<<<< HEAD
+=======
+            -- JOIN Sirkulasi (Siapa yang sedang pakai?)
+>>>>>>> repoB/main
             LEFT JOIN trx_pemakaian_detail tpd ON tpd.asset_id = a.asset_id AND tpd.kembali_qty < tpd.pemakaian_qty
             LEFT JOIN trx_pemakaian tp ON tpd.pemakaian_id = tp.pemakaian_id AND tp.pemakaian_sts = 'OPEN'
             LEFT JOIN mst_pegawai pg ON tp.pegawai_id = pg.pegawai_id
             LEFT JOIN mst_jabatan j ON pg.jabatan_id = j.jabatan_id
 
+<<<<<<< HEAD
+=======
+            -- JOIN Stok (Ada di gudang mana?)
+>>>>>>> repoB/main
             LEFT JOIN dat_stok ds ON a.asset_id = ds.asset_id AND ds.stok_qty > 0
             LEFT JOIN mst_gudang g ON ds.gudang_id = g.gudang_id
         ";
 
         $where = ['a.deleted_st'  => 0];
+<<<<<<< HEAD
         // Tambahkan pencarian tahun
         $search = ['a.asset_kd', 'a.asset_nm', 'v_merek.value_isi', 'v_ruang.value_isi', 'pg.pegawai_nm', 'a.asset_thn_beli'];
+=======
+        $search = ['a.asset_kd', 'a.asset_nm', 'v_merek.value_isi', 'v_ruang.value_isi', 'pg.pegawai_nm'];
+>>>>>>> repoB/main
         $isWhere = null;
 
         DB::datatables_query($query, $search, $where, $isWhere);
     }
 
+<<<<<<< HEAD
+=======
+    // Fungsi detail (standar)
+>>>>>>> repoB/main
     public function get_detail_kustom($asset_id)
     {
         return $this->db->select('v.value_isi, attr.atribut_label')

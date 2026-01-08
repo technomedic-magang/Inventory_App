@@ -10,6 +10,7 @@
       "ordering": true,
       "order": [ [2, 'desc'] ], // Urut Tgl Kembali
       "ajax": {
+<<<<<<< HEAD
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
         "type": "POST"
       },
@@ -20,12 +21,24 @@
         // 0. NO
         {
           "data": "<?= $this->pk_id ?>",
+=======
+        // [FIX] Site URL
+        "url": "<?= site_url('formulir/kembali/ajax_datatables?n=' . _get('n')) ?>",
+        "type": "POST"
+      },
+      "deferRender": true,
+      "pageLength": 25,
+      "columns": [
+        {
+          "data": "kembali_id",
+>>>>>>> repoB/main
           "sortable": false,
           "className": "text-center",
           "render": function(data, type, row, meta) {
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
+<<<<<<< HEAD
         // 1. AKSI
         {
           "data": "<?= $this->pk_id ?>",
@@ -33,6 +46,14 @@
           "sortable": false,
           "render": function(data, type, row, meta) {
             var uri_delete = '<?= $this->uri . '/delete/' ?>' + data;
+=======
+        {
+          "data": "kembali_id",
+          "className": "text-center",
+          "sortable": false,
+          "render": function(data, type, row, meta) {
+            var uri_delete = '<?= site_url("formulir/kembali/delete/") ?>' + data;
+>>>>>>> repoB/main
             return `
                 <div class="dropdown">
                   <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -46,6 +67,7 @@
                 </div>`;
           }
         },
+<<<<<<< HEAD
         // 2. TGL KEMBALI
         { "data": "transaksi_tgl", "className": "text-center" },
         // 3. NO KEMBALI
@@ -55,6 +77,19 @@
         // 5. PEMINJAM
         { "data": "pegawai_nm" }, 
         // 6. KETERANGAN
+=======
+        // [FIX] FORMAT TANGGAL
+        { 
+            "data": "transaksi_tgl", 
+            "className": "text-center",
+            "render": function(data) {
+                return data ? data.split('-').reverse().join('-') : '-';
+            }
+        },
+        { "data": "transaksi_no", "className": "fw-bold" },
+        { "data": "pemakaian_no" }, 
+        { "data": "pegawai_nm" }, 
+>>>>>>> repoB/main
         { "data": "transaksi_ket" }
       ],
     });

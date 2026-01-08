@@ -27,6 +27,11 @@ class Persediaan_masuk extends MY_Controller
     public function form_modal($id = null)
     {
         $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
+<<<<<<< HEAD
+=======
+        
+        // [FIX] Gunakan site_url
+>>>>>>> repoB/main
         $d['form_act'] = site_url($this->uri . '/save' . ($id ? '/' . $id : ''));
 
         if ($id) {
@@ -58,11 +63,29 @@ class Persediaan_masuk extends MY_Controller
         if (empty($d['kategori_temp'])) { _json(['status' => false, 'msg' => 'Kategori wajib dipilih.']); return; }
         if (empty($d['persediaan_id'])) { _json(['status' => false, 'msg' => 'Nama Barang wajib diisi.']); return; }
 
+<<<<<<< HEAD
+=======
+        // [FIX] KONVERSI TANGGAL (dd-mm-yyyy -> yyyy-mm-dd)
+        $tgl_raw = $d['beli_tgl'];
+        $tgl_sql = $tgl_raw;
+        if (strpos($tgl_raw, '-') !== false) {
+            // Cek apakah formatnya dd-mm-yyyy (tahun di belakang)
+            $parts = explode('-', $tgl_raw);
+            if (strlen($parts[2]) == 4) { 
+                $tgl_sql = date('Y-m-d', strtotime($tgl_raw));
+            }
+        }
+
+>>>>>>> repoB/main
         $input_barang = trim($d['persediaan_id']); 
         $persediaan_id = null;
         $update_lokasi = ['lokasi_lantai' => $d['lokasi_lantai'], 'lokasi_ruang' => $d['lokasi_ruang']];
 
+<<<<<<< HEAD
         // 1. LOGIKA BARANG
+=======
+        // 1. LOGIKA BARANG (Create/Update Master)
+>>>>>>> repoB/main
         if (is_numeric($input_barang)) {
             $persediaan_id = $input_barang;
             $this->db->where('persediaan_id', $persediaan_id)->update('mst_persediaan', $update_lokasi);
@@ -91,17 +114,29 @@ class Persediaan_masuk extends MY_Controller
             }
         }
 
+<<<<<<< HEAD
         // 2. LOGIKA NO STRUK (Cek format baru)
         $no_struk_final = $d['struk_no'];
         // Jika kosong ATAU mengandung kata '-AUTO' (berarti user pakai generator preview)
         if (empty($no_struk_final) || strpos($no_struk_final, '-AUTO') !== false) {
             // Generate nomor asli via Model
             $no_struk_final = $this->m_persediaan_masuk->get_nomor_urut($d['kategori_temp'], $d['beli_tgl']);
+=======
+        // 2. LOGIKA NO STRUK
+        $no_struk_final = $d['struk_no'];
+        if (empty($no_struk_final) || strpos($no_struk_final, '-AUTO') !== false) {
+            // Gunakan tanggal SQL untuk generate nomor
+            $no_struk_final = $this->m_persediaan_masuk->get_nomor_urut($d['kategori_temp'], $tgl_sql);
+>>>>>>> repoB/main
         }
 
         $data_header = [
             'struk_no'       => $no_struk_final,
+<<<<<<< HEAD
             'beli_tgl'       => $d['beli_tgl'],
+=======
+            'beli_tgl'       => $tgl_sql, // Format Y-m-d
+>>>>>>> repoB/main
             'keterangan_txt' => $d['keterangan_txt'],
             'total_qty'      => $d['masuk_qty'],
             'active_st'      => 1
@@ -126,6 +161,10 @@ class Persediaan_masuk extends MY_Controller
             $status = $this->m_persediaan_masuk->simpan_restock($data_header, [$data_detail]);
 
             if ($status) {
+<<<<<<< HEAD
+=======
+                // [FIX] Redirect URL Absolut
+>>>>>>> repoB/main
                 $redirect_url = site_url($this->uri); 
                 _json(_response('01', $redirect_url));
             } else {
@@ -140,6 +179,10 @@ class Persediaan_masuk extends MY_Controller
     {
         $w = [$this->pk_id => $id];
         DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
+<<<<<<< HEAD
         _json(_response('03', $this->uri));
+=======
+        _json(_response('03', site_url($this->uri)));
+>>>>>>> repoB/main
     }
 }

@@ -11,7 +11,10 @@
     .bg-purple-light { background: #f3e5f5; color: #ae3ec9; }
 
     .table-vcenter td { vertical-align: middle; }
+<<<<<<< HEAD
     .avatar-text { width: 32px; height: 32px; line-height: 32px; text-align: center; background: #f1f5f9; border-radius: 50%; font-weight: bold; font-size: 12px; color: #64748b; }
+=======
+>>>>>>> repoB/main
 </style>
 
 <div class="page-wrapper">
@@ -36,6 +39,33 @@
     <div class="page-body">
         <div class="container-xl">
             
+<<<<<<< HEAD
+=======
+            <?php if(!empty($service_alerts)): ?>
+            <div class="alert alert-warning alert-dismissible bg-warning-lt border-0 mb-4 shadow-sm" role="alert">
+                <div class="d-flex">
+                    <div class="me-3 align-self-center">
+                        <i class="fas fa-wrench fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="alert-title mb-1 text-dark">Pengingat Service Bulan Ini!</h4>
+                        <div class="text-muted">Kendaraan berikut memasuki jadwal perawatan bulan <strong><?= date('F Y') ?></strong>:</div>
+                        <ul class="mt-2 mb-0 ps-3 text-dark">
+                            <?php foreach($service_alerts as $svc): ?>
+                                <li>
+                                    <strong><?= date('d M', strtotime($svc['tgl_berikutnya'])) ?></strong>: 
+                                    <?= $svc['asset_nm'] ?> (<?= $svc['asset_kd'] ?>) - 
+                                    Target: <?= number_format($svc['kilometer_berikutnya']) ?> KM
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+                <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+            </div>
+            <?php endif; ?>
+
+>>>>>>> repoB/main
             <div class="row row-cards mb-4">
                 <div class="col-sm-6 col-lg-3">
                     <div class="card dash-card p-3">
@@ -87,7 +117,11 @@
                 <div class="col-lg-8">
                     <div class="card dash-card">
                         <div class="card-header border-0">
+<<<<<<< HEAD
                             <h3 class="card-title">Tren Keluar Masuk Barang (6 Bulan)</h3>
+=======
+                            <h3 class="card-title">Tren Logistik (6 Bulan)</h3>
+>>>>>>> repoB/main
                         </div>
                         <div class="card-body">
                             <div id="chart-mentions" class="chart-lg"></div>
@@ -121,7 +155,10 @@
             </div>
 
             <div class="row row-cards">
+<<<<<<< HEAD
                 
+=======
+>>>>>>> repoB/main
                 <div class="col-lg-8">
                     <div class="card dash-card">
                         <div class="card-header border-0">
@@ -134,8 +171,13 @@
                                         <th>Tipe</th>
                                         <th>Tanggal</th>
                                         <th>Ref/Struk</th>
+<<<<<<< HEAD
                                         <th>Info/Penerima</th>
                                         <th class="text-end">Total Qty</th>
+=======
+                                        <th>Info</th>
+                                        <th class="text-end">Qty</th>
+>>>>>>> repoB/main
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -152,6 +194,7 @@
                                                     <i class="fas <?= $icon ?> me-1"></i> <?= $rw['tipe'] ?>
                                                 </span>
                                             </td>
+<<<<<<< HEAD
                                             <td class="text-muted">
                                                 <?= date('d M H:i', strtotime($rw['created_at'])) ?>
                                             </td>
@@ -164,6 +207,12 @@
                                             <td class="text-end font-weight-bold">
                                                 <?= number_format($rw['qty']) ?>
                                             </td>
+=======
+                                            <td class="text-muted"><?= date('d/m H:i', strtotime($rw['created_at'])) ?></td>
+                                            <td><div class="font-weight-medium"><?= $rw['ref'] ?></div></td>
+                                            <td class="text-muted small"><?= $rw['info'] ?: '-' ?></td>
+                                            <td class="text-end font-weight-bold"><?= number_format($rw['qty']) ?></td>
+>>>>>>> repoB/main
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -208,7 +257,10 @@
                         </div>
                     </div>
                 </div>
+<<<<<<< HEAD
 
+=======
+>>>>>>> repoB/main
             </div>
 
         </div>
@@ -217,13 +269,17 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+<<<<<<< HEAD
         // Data dari Controller
+=======
+>>>>>>> repoB/main
         var labels = <?= json_encode($chart_data['labels'] ?? []) ?>;
         var dataIn = <?= json_encode($chart_data['masuk'] ?? []) ?>;
         var dataOut = <?= json_encode($chart_data['keluar'] ?? []) ?>;
 
         if(window.ApexCharts) {
             var options = {
+<<<<<<< HEAD
                 chart: {
                     type: 'area',
                     height: 300,
@@ -244,11 +300,25 @@
                     type: 'gradient',
                     gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 100] }
                 },
+=======
+                chart: { type: 'area', height: 300, toolbar: { show: false }, zoom: { enabled: false } },
+                series: [
+                    { name: 'Masuk', data: dataIn }, 
+                    { name: 'Keluar', data: dataOut }
+                ],
+                dataLabels: { enabled: false },
+                stroke: { width: 2, curve: 'smooth' },
+                colors: ['#2fb344', '#d63939'],
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 100] } },
+>>>>>>> repoB/main
                 xaxis: { categories: labels },
                 tooltip: { theme: 'light' },
                 grid: { strokeDashArray: 4 }
             };
+<<<<<<< HEAD
 
+=======
+>>>>>>> repoB/main
             var chart = new ApexCharts(document.querySelector("#chart-mentions"), options);
             chart.render();
         }

@@ -38,6 +38,11 @@ class M_kendaraan extends CI_Model
                 END as jabatan,
 
                 COALESCE(DATE_FORMAT(tr_latest.max_tgl, '%d/%m/%Y'), '-') as service_terakhir,
+<<<<<<< HEAD
+=======
+                
+                -- [PERBAIKAN] Mengambil max(transaksi_tgl) dari trx_pajak
+>>>>>>> repoB/main
                 COALESCE(DATE_FORMAT(tp_latest.max_tgl, '%d/%m/%Y'), '-') as pajak_kendaraan
 
             FROM mst_asset a
@@ -72,11 +77,20 @@ class M_kendaraan extends CI_Model
             LEFT JOIN mst_gudang g ON ds.gudang_id = g.gudang_id
 
             LEFT JOIN (SELECT asset_id, MAX(tgl_perawatan) as max_tgl FROM trx_perawatan WHERE deleted_st = 0 GROUP BY asset_id) tr_latest ON a.asset_id = tr_latest.asset_id
+<<<<<<< HEAD
             LEFT JOIN (SELECT asset_id, MAX(tgl_jatuh_tempo) as max_tgl FROM trx_pajak WHERE deleted_st = 0 GROUP BY asset_id) tp_latest ON a.asset_id = tp_latest.asset_id
         ";
 
         $where = ['a.deleted_st' => 0];
         // Tambahkan pencarian berdasarkan Tahun Beli
+=======
+            
+            -- [PERBAIKAN DISINI: Ganti tgl_jatuh_tempo menjadi transaksi_tgl]
+            LEFT JOIN (SELECT asset_id, MAX(transaksi_tgl) as max_tgl FROM trx_pajak WHERE deleted_st = 0 GROUP BY asset_id) tp_latest ON a.asset_id = tp_latest.asset_id
+        ";
+
+        $where = ['a.deleted_st' => 0];
+>>>>>>> repoB/main
         $search = ['a.asset_kd', 'a.asset_nm', 'v_nopol.value_isi', 'pg.pegawai_nm', 'a.asset_thn_beli'];
         $isWhere = null;
 

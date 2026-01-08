@@ -5,6 +5,7 @@
     <div class="container-xl">
       <div class="row align-items-center">
         <div class="col">
+<<<<<<< HEAD
           <div class="page-pretitle">
             <?= $this->nav['nav_nm'] ?? 'Formulir' ?>
           </div>
@@ -15,6 +16,16 @@
         <div class="col-auto ms-auto d-print-none">
           <div class="btn-list">
             <a href="javascript:void(0)" onclick="_modal(event, {uri: '<?= $this->uri . '/form_modal' ?>', size: 'modal-lg', position: 'normal'})" class="btn btn-success d-sm-inline-block">
+=======
+          <div class="page-pretitle">Formulir</div>
+          <h2 class="page-title">Pengembalian Aset</h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+          <div class="btn-list">
+            <a href="javascript:void(0)" 
+               onclick="_modal(event, {uri: '<?= site_url("formulir/kembali/form_modal") ?>', size: 'modal-lg', position: 'normal'})" 
+               class="btn btn-success d-sm-inline-block">
+>>>>>>> repoB/main
                 <i class="fas fa-reply-all"></i> Buat Pengembalian
             </a>
           </div>
