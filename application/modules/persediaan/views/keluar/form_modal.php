@@ -6,9 +6,12 @@
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label required">Tanggal Keluar</label>
             <div class="col-lg-9 col-md-8">
+                <?php 
+                    $val_tgl = @$main['keluar_tgl'] ? date('d-m-Y', strtotime($main['keluar_tgl'])) : date('d-m-Y');
+                ?>
                 <input type="text" id="keluar_tgl" name="keluar_tgl" 
                        class="form-control datepicker-notauto" 
-                       value="<?= @$main['keluar_tgl'] ? date('d-m-Y', strtotime($main['keluar_tgl'])) : date('d-m-Y') ?>" 
+                       value="<?= $val_tgl ?>" 
                        required placeholder="dd-mm-yyyy">
                 <small class="text-muted" style="font-size: 10px;">*Klik tanggal untuk memilih</small>
             </div>
@@ -17,8 +20,8 @@
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label">No. Transaksi</label>
             <div class="col-lg-9 col-md-8">
-                <input type="text" id="struk_no" name="struk_no" class="form-control bg-light" readonly placeholder="Otomatis..." value="<?= @$main['struk_no'] ?>">
-                <small class="text-muted">Format: OUT-KODE-YYYY.MM.DD-URUT</small>
+                <input type="text" id="struk_no" name="struk_no" class="form-control bg-light" 
+                       readonly placeholder="Otomatis..." value="<?= @$main['struk_no'] ?>">
             </div>
         </div>
 
@@ -60,10 +63,11 @@
                 <select id="filter_kategori" name="kategori_temp" class="form-select" onchange="onFilterChange()">
                     <option value="">- Semua Kategori -</option>
                     <?php foreach($list_kategori as $kat): ?>
-                        <option value="<?= $kat['kategori_id'] ?>" data-kode="<?= $kat['kategori_kd'] ?>"><?= $kat['kategori_nm'] ?></option>
+                        <option value="<?= $kat['kategori_id'] ?>" data-kode="<?= $kat['kategori_kd'] ?>">
+                            <?= $kat['kategori_nm'] ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
-                <small class="text-muted">Pilih kategori untuk mempermudah pencarian barang.</small>
             </div>
         </div>
 
@@ -140,32 +144,25 @@
     $(document).ready(function() {
         $('.select2-modal').select2(select2Options);
         
-        // Init awal
+        // Init state awal
         filterBarangByKategori();
         if($('#struk_no').val() == '') { updateNoTransaksi(); }
 
-        // 1. Jalankan Watcher (Untuk Auto Number)
+        // Watcher Tanggal
         dateWatcher();
 
-        // 2. LOGIKA SINGLE KLIK (Pilih Tanggal = Auto Tutup)
-        // Kita mendeteksi klik pada elemen hari (class umum library datepicker)
+        // Trik agar Datepicker menutup saat dipilih
         $('body').on('click', '.day-item, .flatpickr-day, .datepicker-cell, td.day', function(e) {
-            // Beri jeda sangat singkat (50ms) agar library sempat mengisi nilai ke input
-            setTimeout(function() {
-                // Paksa input kehilangan fokus (blur)
-                // Ini memerintahkan Date Picker untuk "Selesai" dan menutup kalender
-                $('#keluar_tgl').blur(); 
-            }, 50);
+            setTimeout(function() { $('#keluar_tgl').blur(); }, 50);
         });
     });
 
-    // --- WATCHER AUTO NUMBER ---
     function dateWatcher() {
         setInterval(function() {
             var tgl = $('#keluar_tgl').val();
             if (tgl && tgl.length == 10 && tgl !== lastDateValue) {
                 lastDateValue = tgl;
-                updateNoTransaksi(); // Update preview nomor
+                updateNoTransaksi(); 
             }
         }, 100);
     }
@@ -185,13 +182,16 @@
 
         $selectBarang.find('option').each(function() {
             var itemKat = $(this).data('kategori');
-            if (katID === "" || itemKat == katID || $(this).val() == "") {
+            var shouldShow = (katID === "" || itemKat == katID || $(this).val() == "");
+            
+            if (shouldShow) {
                 $(this).prop('disabled', false); 
             } else {
                 $(this).prop('disabled', true); 
             }
         });
 
+        // Refresh Select2
         if ($selectBarang.data('select2')) { $selectBarang.select2('destroy'); }
         $selectBarang.select2(select2Options);
     }
@@ -211,6 +211,7 @@
         $('#btn_simpan').prop('disabled', false);
     }
 
+    // Validasi Realtime Input Qty
     $('#keluar_qty').on('input', function() {
         var val = parseFloat($(this).val());
         var max = parseFloat($(this).attr('max')) || 0;

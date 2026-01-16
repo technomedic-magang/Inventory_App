@@ -4,6 +4,7 @@
   <div class="page-header d-print-none mt-2">
     <div class="container-xl">
       <div class="row align-items-center">
+        
         <div class="col">
           <div class="page-pretitle">
             <?= $this->nav['nav_nm'] ?? 'Logistik & Inventaris' ?>
@@ -12,15 +13,17 @@
             <?= $this->title ?? 'Riwayat Persediaan Masuk' ?>
           </h2>
         </div>
+
         <div class="col-auto ms-auto d-print-none">
           <div class="btn-list">
             <a href="javascript:void(0)" 
-              onclick="_modal(event, {uri: '<?= site_url($this->uri . '/form_modal') ?>', size: 'modal-lg', position: 'normal'})" 
-              class="btn btn-primary d-sm-inline-block">
+               onclick="_modal(event, {uri: '<?= $this->uri . '/form_modal' ?>', size: 'modal-lg', position: 'normal'})" 
+               class="btn btn-primary d-sm-inline-block">
                 <i class="fas fa-plus me-1"></i> Tambah Stok (Belanja)
             </a>
           </div>
         </div>
+
       </div>
     </div>
   </div>

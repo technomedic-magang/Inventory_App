@@ -3,156 +3,186 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Persediaan_masuk extends MY_Controller
 {
+    // Definisi path view
+    protected $view_path = 'persediaan/masuk/';
+
     public function __construct()
     {
         parent::__construct();
         _models(['persediaan/m_persediaan_masuk']);
         
-        $this->table = $this->m_persediaan_masuk->table;
-        $this->pk_id = $this->m_persediaan_masuk->pk_id;
-        $this->template = 'persediaan/masuk/'; 
-        $this->uri = 'persediaan/persediaan_masuk'; 
+        $this->model = $this->m_persediaan_masuk;
+        $this->table = $this->model->table;
+        $this->pk_id = $this->model->pk_id;
+
+        // [FIX ERROR AJAX]
+        // Definisi URI sebagai FULL URL agar konsisten dengan _js.php
+        $this->uri = site_url('persediaan/persediaan_masuk');
     }
 
     public function index()
     {
-        $this->render($this->template . 'index');
+        $this->render($this->view_path . 'index');
     }
 
     public function ajax_datatables()
     {
-        $this->m_persediaan_masuk->load_datatables();
+        $this->model->load_datatables();
     }
 
     public function form_modal($id = null)
     {
-        $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
+        $data = [];
         
-        // [FIX] Gunakan site_url
-        $d['form_act'] = site_url($this->uri . '/save' . ($id ? '/' . $id : ''));
+        // Ambil Data Utama
+        $data['main'] = DB::get($this->table, [$this->pk_id => $id]);
+        
+        // URL Action Form (Gunakan $this->uri langsung)
+        $data['form_act'] = $this->uri . '/save/' . $id;
 
         if ($id) {
             $detail = $this->db->get_where('dat_persediaan_masuk_det', ['masuk_id' => $id])->row_array();
-            if ($detail && $d['main']) {
-                $d['main'] = array_merge($d['main'], $detail);
+            if ($detail && $data['main']) {
+                $data['main'] = array_merge($data['main'], $detail);
             }
         }
 
-        $d['list_kategori'] = $this->db->get('mst_kategori_persediaan')->result_array();
+        // Data Referensi
+        $data['list_kategori'] = $this->db->get('mst_kategori_persediaan')->result_array();
+        $data['list_satuan']   = $this->db->where('deleted_st', 0)->order_by('satuan_nm', 'ASC')->get('mst_satuan')->result_array();
         
-        $d['list_barang'] = $this->db->select('p.*, s.satuan_nm')
+        // List Barang
+        $data['list_barang'] = $this->db->select('p.*, s.satuan_nm')
                                      ->from('mst_persediaan p')
                                      ->join('mst_satuan s', 's.satuan_id = p.satuan_id', 'left')
                                      ->where('p.deleted_st', 0)
                                      ->order_by('p.barang_nm', 'ASC')
                                      ->get()->result_array();
 
-        $d['list_satuan'] = $this->db->where('deleted_st', 0)->order_by('satuan_nm', 'ASC')->get('mst_satuan')->result_array();
-
-        $this->render($this->template . 'form_modal', $d);
+        $this->render($this->view_path . 'form_modal', $data);
     }
 
     public function save($id = null)
     {
-        $d = _post();
-
-        if (empty($d['beli_tgl'])) { _json(['status' => false, 'msg' => 'Tanggal wajib diisi.']); return; }
-        if (empty($d['kategori_temp'])) { _json(['status' => false, 'msg' => 'Kategori wajib dipilih.']); return; }
-        if (empty($d['persediaan_id'])) { _json(['status' => false, 'msg' => 'Nama Barang wajib diisi.']); return; }
-
-        // [FIX] KONVERSI TANGGAL (dd-mm-yyyy -> yyyy-mm-dd)
-        $tgl_raw = $d['beli_tgl'];
-        $tgl_sql = $tgl_raw;
-        if (strpos($tgl_raw, '-') !== false) {
-            // Cek apakah formatnya dd-mm-yyyy (tahun di belakang)
-            $parts = explode('-', $tgl_raw);
-            if (strlen($parts[2]) == 4) { 
-                $tgl_sql = date('Y-m-d', strtotime($tgl_raw));
-            }
-        }
-
-        $input_barang = trim($d['persediaan_id']); 
-        $persediaan_id = null;
-        $update_lokasi = ['lokasi_lantai' => $d['lokasi_lantai'], 'lokasi_ruang' => $d['lokasi_ruang']];
-
-        // 1. LOGIKA BARANG (Create/Update Master)
-        if (is_numeric($input_barang)) {
-            $persediaan_id = $input_barang;
-            $this->db->where('persediaan_id', $persediaan_id)->update('mst_persediaan', $update_lokasi);
-        } else {
-            $this->db->where('LOWER(barang_nm)', strtolower($input_barang))->where('deleted_st', 0);
-            $cek = $this->db->get('mst_persediaan')->row();
-            
-            if ($cek) {
-                $persediaan_id = $cek->persediaan_id;
-                $this->db->where('persediaan_id', $persediaan_id)->update('mst_persediaan', $update_lokasi);
-            } else {
-                $data_master = [
-                    'barang_nm'     => $input_barang, 
-                    'barang_kd'     => 'AUTO-' . rand(1000,9999), 
-                    'satuan_id'     => $d['satuan_id'],
-                    'kategori_id'   => $d['kategori_temp'],
-                    'stok_qty'      => 0,
-                    'lokasi_lantai' => $d['lokasi_lantai'],
-                    'lokasi_ruang'  => $d['lokasi_ruang'],
-                    'active_st'     => 1,
-                    'created_at'    => date('Y-m-d H:i:s'),
-                    'created_by'    => $this->session->userdata('user_id')
-                ];
-                $this->db->insert('mst_persediaan', $data_master);
-                $persediaan_id = $this->db->insert_id(); 
-            }
-        }
-
-        // 2. LOGIKA NO STRUK
-        $no_struk_final = $d['struk_no'];
-        if (empty($no_struk_final) || strpos($no_struk_final, '-AUTO') !== false) {
-            // Gunakan tanggal SQL untuk generate nomor
-            $no_struk_final = $this->m_persediaan_masuk->get_nomor_urut($d['kategori_temp'], $tgl_sql);
-        }
-
-        $data_header = [
-            'struk_no'       => $no_struk_final,
-            'beli_tgl'       => $tgl_sql, // Format Y-m-d
-            'keterangan_txt' => $d['keterangan_txt'],
-            'total_qty'      => $d['masuk_qty'],
-            'active_st'      => 1
-        ];
-
-        $data_detail = [
-            'persediaan_id'  => $persediaan_id,
-            'satuan_id'      => $d['satuan_id'],
-            'masuk_qty'      => $d['masuk_qty'],
-            'keterangan_txt' => '',
-            'created_at'     => date('Y-m-d H:i:s'),
-            'created_by'     => $this->session->userdata('user_id'),
-            'active_st'      => 1,
-            'deleted_st'     => 0
-        ];
-
-        if ($id == null) {
-            $data_header['created_at'] = date('Y-m-d H:i:s');
-            $data_header['created_by'] = $this->session->userdata('user_id');
-            $data_header['deleted_st'] = 0;
-
-            $status = $this->m_persediaan_masuk->simpan_restock($data_header, [$data_detail]);
-
-            if ($status) {
-                // [FIX] Redirect URL Absolut
-                $redirect_url = site_url($this->uri); 
-                _json(_response('01', $redirect_url));
-            } else {
-                _json(['status' => false, 'msg' => 'Gagal menyimpan transaksi.']);
-            }
-        } else {
+        if ($id != null) {
              _json(['status' => false, 'msg' => 'Edit data dikunci.']);
+             return;
         }
+
+        $input = _post();
+
+        // Validasi
+        if (empty($input['beli_tgl'])) { _json(['status' => false, 'msg' => 'Tanggal wajib diisi.']); return; }
+        if (empty($input['kategori_temp'])) { _json(['status' => false, 'msg' => 'Kategori wajib dipilih.']); return; }
+        if (empty($input['persediaan_id'])) { _json(['status' => false, 'msg' => 'Nama Barang wajib diisi.']); return; }
+
+        $tgl_sql = $this->_convert_date($input['beli_tgl']);
+        
+        // Proses Master Barang & Transaksi
+        $persediaan_id = $this->_process_master_item($input);
+        $this->_process_transaction($input, $persediaan_id, $tgl_sql);
     }
     
     public function delete($id = null)
     {
-        $w = [$this->pk_id => $id];
-        DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
-        _json(_response('03', site_url($this->uri)));
+        if (empty($id)) return;
+
+        $where = [$this->pk_id => $id];
+        DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $where);
+        
+        _json(_response('03', $this->uri));
+    }
+
+    // --- Private Helper Methods ---
+
+    private function _process_master_item($input)
+    {
+        $input_barang  = trim($input['persediaan_id']); 
+        $update_lokasi = [
+            'lokasi_lantai' => $input['lokasi_lantai'], 
+            'lokasi_ruang'  => $input['lokasi_ruang']
+        ];
+
+        // Cek apakah input berupa ID (Barang Lama)
+        if (is_numeric($input_barang)) {
+            $this->db->where('persediaan_id', $input_barang)->update('mst_persediaan', $update_lokasi);
+            return $input_barang;
+        } 
+        
+        // Cek by Nama
+        $this->db->where('LOWER(barang_nm)', strtolower($input_barang))->where('deleted_st', 0);
+        $cek = $this->db->get('mst_persediaan')->row();
+        
+        if ($cek) {
+            $this->db->where('persediaan_id', $cek->persediaan_id)->update('mst_persediaan', $update_lokasi);
+            return $cek->persediaan_id;
+        } 
+        
+        // Barang Baru
+        $data_master = [
+            'barang_nm'     => $input_barang, 
+            'barang_kd'     => 'AUTO-' . rand(1000,9999), 
+            'satuan_id'     => $input['satuan_id'],
+            'kategori_id'   => $input['kategori_temp'],
+            'stok_qty'      => 0,
+            'lokasi_lantai' => $input['lokasi_lantai'],
+            'lokasi_ruang'  => $input['lokasi_ruang'],
+            'active_st'     => 1,
+            'created_at'    => date('Y-m-d H:i:s'),
+            'created_by'    => $this->session->userdata('user_id')
+        ];
+        
+        $this->db->insert('mst_persediaan', $data_master);
+        return $this->db->insert_id(); 
+    }
+
+    private function _process_transaction($input, $persediaan_id, $tgl_sql)
+    {
+        $no_struk = $input['struk_no'];
+        if (empty($no_struk) || strpos($no_struk, '-AUTO') !== false) {
+            $no_struk = $this->model->get_nomor_urut($input['kategori_temp'], $tgl_sql);
+        }
+
+        $data_header = [
+            'struk_no'       => $no_struk,
+            'beli_tgl'       => $tgl_sql,
+            'keterangan_txt' => $input['keterangan_txt'],
+            'total_qty'      => $input['masuk_qty'],
+            'active_st'      => 1,
+            'deleted_st'     => 0,
+            'created_at'     => date('Y-m-d H:i:s'),
+            'created_by'     => $this->session->userdata('user_id')
+        ];
+
+        $data_detail = [
+            'persediaan_id'  => $persediaan_id,
+            'satuan_id'      => $input['satuan_id'],
+            'masuk_qty'      => $input['masuk_qty'],
+            'keterangan_txt' => '',
+            'active_st'      => 1,
+            'deleted_st'     => 0,
+            'created_at'     => date('Y-m-d H:i:s'),
+            'created_by'     => $this->session->userdata('user_id')
+        ];
+
+        $status = $this->model->simpan_restock($data_header, [$data_detail]);
+
+        if ($status) {
+            _json(_response('01', $this->uri));
+        } else {
+            _json(['status' => false, 'msg' => 'Gagal menyimpan transaksi.']);
+        }
+    }
+
+    private function _convert_date($date_raw)
+    {
+        if (empty($date_raw)) return date('Y-m-d');
+        if (strpos($date_raw, '-') !== false) {
+            $parts = explode('-', $date_raw);
+            if (count($parts) == 3 && strlen($parts[2]) == 4) { 
+                return $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+            }
+        }
+        return $date_raw;
     }
 }

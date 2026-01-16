@@ -1,0 +1,76 @@
+<?php include('_js.php') ?>
+
+<div class="page-wrapper">
+  <div class="page-header d-print-none mt-2">
+    <div class="container-xl">
+      <div class="row align-items-center">
+        
+        <div class="col">
+          <div class="page-pretitle">
+            <?= $this->nav['nav_nm'] ?? 'Pendaftaran Aset' ?>
+          </div>
+          <h2 class="page-title">
+            <?= $this->title ?? 'Pendaftaran Asset' ?>
+          </h2>
+        </div>
+
+        <div class="col-auto ms-auto d-print-none">
+          <div class="btn-list">
+            <a href="javascript:void(0)" 
+               onclick="_modal(event, {uri: '<?= $this->uri . '/form_modal' ?>', size: 'modal-lg', position: 'normal'})" 
+               class="btn btn-primary d-sm-inline-block">
+                <i class="fas fa-plus"></i> Tambah Asset
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  
+  <div class="page-wrapper">
+    <div class="page-body mt-2">
+      <div class="container-xl">
+        <div class="card">
+          <div class="card-body p-2">
+            <div class="w-100">
+
+              <div class="row mb-3">
+                <div class="col-md-4 col-sm-6">
+                  <label class="form-label">Filter Kategori Aset:</label>
+                  <select id="filter_kategori" class="form-select">
+                    <option value="">-- Tampilkan Semua --</option>
+                    <?php if(!empty($list_kategori)): ?>
+                      <?php foreach($list_kategori as $kat): ?>
+                        <option value="<?= $kat['kategori_id'] ?>"><?= $kat['kategori_nm'] ?></option>
+                      <?php endforeach; ?>
+                    <?php endif; ?>
+                  </select>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-vcenter card-table table-striped table-sm display nowrap" id="datatable-main">
+                  <thead>
+                    <tr>
+                      <th width="20">No</th>
+                      <th width="40">Aksi</th>
+                      <th>Kode Asset</th>
+                      <th>Nama Asset</th>
+                      <th>Kategori</th>
+                      <th>Tgl Beli</th>
+                      <th class="text-center">Kondisi</th>
+                      <th class="text-end">Harga Beli</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

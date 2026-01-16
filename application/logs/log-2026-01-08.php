@@ -675,3 +675,9 @@ ERROR - 2026-01-08 14:24:41 --> Query error: Unknown column 'pengerjaan_foto' in
 WHERE `service_id` = '17'
 ERROR - 2026-01-08 14:24:46 --> Query error: Unknown column 'pengerjaan_foto' in 'field list' - Invalid query: UPDATE `dat_service` SET `tgl_service` = '2026-01-08', `deskripsi_penyelesaian` = 'jebol', `bengkel_nm` = '', `biaya` = 100, `status_tiket` = 2, `updated_at` = '2026-01-08 14:24:46', `updated_by` = 'P000000000000', `kondisi_akhir` = 'BAIK', `pengerjaan_foto` = 'c66b95e84e65e5807e5d8f1c971e300a.png', `tgl_berikutnya` = '2026-04-08'
 WHERE `service_id` = '17'
+ERROR - 2026-01-08 16:00:53 --> 404 Page Not Found: ../modules/formulir/controllers//index
+ERROR - 2026-01-08 16:01:42 --> 404 Page Not Found: ../modules/formulir/controllers//index
+ERROR - 2026-01-08 16:01:50 --> 404 Page Not Found: ../modules/formulir/controllers//index
+ERROR - 2026-01-08 16:02:16 --> 404 Page Not Found: ../modules/formulir/controllers//index
+ERROR - 2026-01-08 16:02:27 --> 404 Page Not Found: ../modules/formulir/controllers//index
+ERROR - 2026-01-08 16:02:35 --> 404 Page Not Found: ../modules/formulir/controllers//index

@@ -6,7 +6,6 @@ class Keuangan_asset extends MY_Controller
     public function __construct()
     {
         parent::__construct();
-        // Load model dengan nama yang sesuai file
         _models(['keuangan/m_keuangan_asset']);
         
         $this->template = 'keuangan/keuangan_asset/'; 
@@ -93,7 +92,6 @@ class Keuangan_asset extends MY_Controller
         ]);
     }
 
-    // [FIX UTAMA] Menggunakan $this->render agar modal muncul di UI
     public function form_modal_tutup_buku()
     {
         $periode = date('Y-m');
@@ -131,8 +129,6 @@ class Keuangan_asset extends MY_Controller
             _json(['status' => false, 'msg' => $res['msg']]);
         }
     }
-
-    // ... code sebelumnya ...
 
     // [BARU] Proses Buka Buku Kembali
     public function buka_buku_process()

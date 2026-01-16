@@ -1,5 +1,6 @@
 <script type="text/javascript">
   var tabel = null;
+
   $(document).ready(function() {
     tabel = $('#datatable-main').DataTable({
       "language": {
@@ -10,17 +11,21 @@
       "responsive": true,
       "serverSide": true,
       "ordering": true,
-      "order": [ [2, 'desc'] ], 
+      "order": [
+        [2, 'desc'] // Urut berdasarkan Tanggal
+      ],
       "ajax": {
-        // [FIX] Site URL
-        "url": "<?= site_url($this->uri . '/ajax_datatables?n=' . _get('n')) ?>",
+        // [FIX ERROR] Gunakan $this->uri langsung karena sudah FULL URL dari controller
+        "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
         "type": "POST"
       },
       "deferRender": true,
-      "aLengthMenu": (typeof _datatableLengthMenu !== 'undefined') ? _datatableLengthMenu : [[10, 25, 50, -1], [10, 25, 50, "All"]],
+      "aLengthMenu": (typeof _datatableLengthMenu !== 'undefined') ? _datatableLengthMenu : [
+        [10, 25, 50, -1],
+        [10, 25, 50, "All"]
+      ],
       "pageLength": 25,
-      "columns": [
-        {
+      "columns": [{
           "data": "<?= $this->pk_id ?>",
           "sortable": false,
           "render": function(data, type, row, meta) {
@@ -32,8 +37,9 @@
           "className": "text-left",
           "sortable": false,
           "render": function(data, type, row, meta) {
-            var uri_delete = '<?= site_url($this->uri . '/delete/') ?>' + data;
-            
+            // [FIX ERROR] Gunakan $this->uri langsung tanpa site_url()
+            var uri_delete = '<?= $this->uri . '/delete/' ?>' + data;
+
             return '' +
               '<div class="btn-list btn-sm flex-nowrap">' +
               '  <div class="dropdown"> ' +
@@ -53,18 +59,22 @@
           "data": "beli_tgl",
           "className": "text-left",
           "render": function(data) {
-             // [FIX] Format dd-mm-yyyy
-             if(!data) return '-';
-             return data.split('-').reverse().join('-');
+            if (!data) return '-';
+            // Format dd-mm-yyyy manual
+            var parts = data.split('-');
+            return parts[2] + '-' + parts[1] + '-' + parts[0];
           }
         },
         {
           "data": "struk_no",
           "className": "text-left",
           "render": function(data) {
-             if (!data) return '<span class="text-muted">-</span>';
-             var color = (data.startsWith('AUTO')) ? 'secondary' : 'blue';
-             return `<span class="badge bg-${color}-lt">${data}</span>`;
+            if (!data) return '<span class="text-muted">-</span>';
+            var color = 'blue';
+            if (data.indexOf('AUTO') !== -1) {
+                color = 'secondary';
+            }
+            return '<span class="badge bg-' + color + '-lt">' + data + '</span>';
           }
         },
         {
@@ -75,14 +85,14 @@
           "data": "kategori_nm",
           "className": "text-left",
           "render": function(data) {
-              return data ? data : '<span class="text-muted">-</span>';
+            return data ? data : '<span class="text-muted">-</span>';
           }
         },
         {
           "data": "masuk_qty",
           "className": "text-left fw-bold",
           "render": function(data) {
-              return parseFloat(data).toLocaleString('id-ID');
+            return parseFloat(data).toLocaleString('id-ID');
           }
         },
         {

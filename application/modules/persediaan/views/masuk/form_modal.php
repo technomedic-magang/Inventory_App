@@ -19,9 +19,12 @@
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label required">Tanggal</label>
             <div class="col-lg-9 col-md-8">
+                <?php 
+                    $val_tgl = @$main['beli_tgl'] ? date('d-m-Y', strtotime($main['beli_tgl'])) : date('d-m-Y');
+                ?>
                 <input type="text" id="beli_tgl" name="beli_tgl" 
                        class="form-control datepicker-notauto" 
-                       value="<?= @$main['beli_tgl'] ? date('d-m-Y', strtotime($main['beli_tgl'])) : date('d-m-Y') ?>" 
+                       value="<?= $val_tgl ?>" 
                        required placeholder="dd-mm-yyyy">
             </div>
         </div>
@@ -29,7 +32,8 @@
         <div class="mb-1 row">
             <label class="col-lg-3 col-md-4 col-form-label">No. Transaksi</label>
             <div class="col-lg-9 col-md-8">
-                <input type="text" id="struk_no" name="struk_no" class="form-control bg-light" readonly placeholder="Otomatis..." value="<?= @$main['struk_no'] ?>">
+                <input type="text" id="struk_no" name="struk_no" class="form-control bg-light" 
+                       readonly placeholder="Otomatis..." value="<?= @$main['struk_no'] ?>">
                 <small class="text-muted">Format: KODE-TANGGAL-URUT</small>
             </div>
         </div>
@@ -54,6 +58,7 @@
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </select>
+                <small class="text-muted">Ketik untuk mencari atau menambah barang baru.</small>
             </div>
         </div>
 
@@ -97,6 +102,7 @@
         </div>
 
         <div class="border-dotted my-3"></div>
+
         <div class="row mt-2">
             <div class="col-9 offset-3">
                 <button type="submit" class="btn btn-primary" onclick="_save(event)">
@@ -127,23 +133,29 @@
     var lastDateValue = '';
 
     $(document).ready(function() {
+        // Init Select2
         $('.select2-modal').select2(select2Options);
+        
+        // Filter awal
         filterBarangByKategori(); 
         
-        // Cek awal
-        if($('#struk_no').val() == '') { updateNoTransaksi(); }
+        // Cek Preview Nomor
+        if($('#struk_no').val() == '') { 
+            updateNoTransaksi(); 
+        }
 
-        // Watcher Tanggal (Update Nomor saat tanggal berubah)
+        // Jalankan Watcher Tanggal
         dateWatcher();
     });
 
-    // --- FUNGSI WATCHER ---
+    // --- Fungsi Helper ---
+
     function dateWatcher() {
         setInterval(function() {
             var tgl = $('#beli_tgl').val();
             if (tgl && tgl.length == 10 && tgl !== lastDateValue) {
                 lastDateValue = tgl;
-                updateNoTransaksi(); // Update preview nomor
+                updateNoTransaksi(); 
             }
         }, 100);
     }
@@ -156,49 +168,61 @@
     function filterBarangByKategori() {
         var katID = $('#filter_kategori').val();
         var $selectBarang = $('#persediaan_id');
+        
+        // Reset pilihan barang saat kategori berubah
         $selectBarang.val('').trigger('change');
+        
+        // Loop opsi untuk enable/disable sesuai kategori
         $selectBarang.find('option').each(function() {
             var itemKat = $(this).data('kategori');
-            if (katID === "" || itemKat == katID || $(this).val() == "" || typeof itemKat === 'undefined') {
+            
+            // Tampilkan jika kategori cocok, atau belum ada kategori, atau opsi kosong
+            var shouldShow = (katID === "" || itemKat == katID || $(this).val() == "" || typeof itemKat === 'undefined');
+            
+            if (shouldShow) {
                 $(this).prop('disabled', false); 
             } else {
                 $(this).prop('disabled', true); 
             }
         });
-        if ($selectBarang.data('select2')) { $selectBarang.select2('destroy'); }
+
+        // Re-init Select2 agar perubahan disabled ter-render
+        if ($selectBarang.data('select2')) { 
+            $selectBarang.select2('destroy'); 
+        }
         $selectBarang.select2(select2Options);
     }
 
     function onBarangChange(el) {
         var $opt = $(el).find(':selected');
+        
+        // Auto-fill field lain berdasarkan data barang
         var sat = $opt.data('satuan');
         var lan = $opt.data('lantai');
         var rua = $opt.data('ruang');
+        
         if (sat) $('#satuan_id').val(sat);
         if (lan) $('#lokasi_lantai').val(lan);
         if (rua) $('#lokasi_ruang').val(rua);
     }
 
-    // --- PREVIEW NOMOR (JS LOGIC) ---
     function updateNoTransaksi() {
         var $kat = $('#filter_kategori option:selected');
-        var katID = $kat.val();
         var katKode = $kat.data('kode') || 'GEN';
-        var tgl = $('#beli_tgl').val(); // Format dd-mm-yyyy
+        var tgl = $('#beli_tgl').val(); 
 
-        if(katID && tgl && tgl.length == 10) {
-            // [FIX] Parsing dd-mm-yyyy -> yyyy.mm.dd
-            // Split berdasarkan '-'
+        if (tgl && tgl.length == 10) {
+            // Konversi dd-mm-yyyy menjadi yyyy.mm.dd untuk preview
             var parts = tgl.split('-');
             if (parts.length == 3) {
-                // parts[0] = dd, parts[1] = mm, parts[2] = yyyy
                 var formattedDate = parts[2] + '.' + parts[1] + '.' + parts[0];
                 
-                // Tampilkan Preview
+                // Format: KODE-YYYY.MM.DD-AUTO
                 $('#struk_no').val(katKode + '-' + formattedDate + '-AUTO');
+                return;
             }
-        } else {
-            $('#struk_no').val('');
         }
+        
+        $('#struk_no').val('');
     }
 </script>

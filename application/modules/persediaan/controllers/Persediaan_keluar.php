@@ -3,82 +3,54 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Persediaan_keluar extends MY_Controller
 {
+    protected $view_path = 'persediaan/keluar/';
+    // Definisi Full URL di sini untuk konsistensi
+    protected $uri_path  = 'persediaan/persediaan_keluar'; 
+
     public function __construct()
     {
         parent::__construct();
         _models(['persediaan/m_persediaan_keluar']);
         
-        $this->table = $this->m_persediaan_keluar->table;
-        $this->pk_id = $this->m_persediaan_keluar->pk_id;
-        $this->template = 'persediaan/keluar/'; 
-        $this->uri = 'persediaan/persediaan_keluar'; 
+        $this->model = $this->m_persediaan_keluar;
+        $this->table = $this->model->table;
+        $this->pk_id = $this->model->pk_id;
+        
+        // Set URI sebagai Full URL
+        $this->uri = site_url($this->uri_path); 
     }
 
     public function index()
     {
-        $this->render($this->template . 'index');
+        $this->render($this->view_path . 'index');
     }
 
     public function ajax_datatables()
     {
-        $this->m_persediaan_keluar->load_datatables();
-    }
-
-    // --- AJAX: Ambil Stok Terkini ---
-    public function get_stok_saat_ini()
-    {
-        $id = $this->input->get('persediaan_id');
-        if(empty($id)) { echo json_encode(['status'=>false]); return; }
-
-        $stok = $this->m_persediaan_keluar->get_stok_item($id);
-        echo json_encode(['status'=>true, 'stok'=>$stok]);
-    }
-
-    // --- AJAX: Generate Nomor Otomatis ---
-    public function get_penomoran_otomatis()
-    {
-        $kategori_id = $this->input->get('kategori_id'); 
-        $tgl_raw     = $this->input->get('tanggal');
-        
-        // [FIX] Konversi Tanggal (dd-mm-yyyy -> yyyy-mm-dd)
-        $tgl_sql = $tgl_raw;
-        if (strpos($tgl_raw, '-') !== false) {
-            $tgl_sql = date('Y-m-d', strtotime($tgl_raw));
-        }
-
-        // Ambil Kode Kategori
-        $kode_kat = 'OUT'; 
-        if(!empty($kategori_id)) {
-            $kategori = $this->db->get_where('mst_kategori_persediaan', ['kategori_id' => $kategori_id])->row();
-            if($kategori && isset($kategori->kategori_kd)) {
-                $kode_kat = 'OUT-' . $kategori->kategori_kd; 
-            }
-        }
-
-        // Generate nomor pakai tanggal SQL
-        $new_no = $this->m_persediaan_keluar->get_nomor_urut($kode_kat, $tgl_sql);
-        
-        header('Content-Type: application/json');
-        echo json_encode(['status' => true, 'no_otomatis' => $new_no]);
+        $this->model->load_datatables();
     }
 
     public function form_modal($id = null)
     {
-        $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
+        $data = [];
         
-        // [FIX] Site URL
-        $d['form_act'] = site_url($this->uri . '/save' . ($id ? '/' . $id : ''));
+        // 1. Data Utama
+        $data['main'] = DB::get($this->table, [$this->pk_id => $id]);
+        $data['form_act'] = $this->uri . '/save/' . $id;
 
         if ($id) {
             $detail = $this->db->get_where('dat_persediaan_keluar_det', ['keluar_id' => $id])->row_array();
-            if ($detail && $d['main']) {
-                $d['main'] = array_merge($d['main'], $detail);
+            if ($detail && $data['main']) {
+                $data['main'] = array_merge($data['main'], $detail);
             }
         }
 
-        $d['list_kategori'] = $this->db->get('mst_kategori_persediaan')->result_array();
+        // 2. Data Referensi
+        $data['list_kategori'] = $this->db->get('mst_kategori_persediaan')->result_array();
+        $data['list_satuan']   = $this->db->where('deleted_st', 0)->order_by('satuan_nm', 'ASC')->get('mst_satuan')->result_array();
         
-        $d['list_barang'] = $this->db->select('p.*, s.satuan_nm')
+        // 3. List Barang (Hanya yang punya stok)
+        $data['list_barang'] = $this->db->select('p.*, s.satuan_nm')
                                      ->from('mst_persediaan p')
                                      ->join('mst_satuan s', 's.satuan_id = p.satuan_id', 'left')
                                      ->where('p.deleted_st', 0)
@@ -86,89 +58,132 @@ class Persediaan_keluar extends MY_Controller
                                      ->order_by('p.barang_nm', 'ASC')
                                      ->get()->result_array();
 
-        $d['list_satuan'] = $this->db->where('deleted_st', 0)->order_by('satuan_nm', 'ASC')->get('mst_satuan')->result_array();
-
-        $d['list_pegawai'] = $this->db->select('pegawai_id, pegawai_nm')
+        // 4. List Pegawai (Penerima)
+        $data['list_pegawai'] = $this->db->select('pegawai_id, pegawai_nm')
                                       ->from('mst_pegawai')
-                                      ->where('deleted_st', 0)
-                                      ->where('active_st', 1) 
+                                      ->where(['deleted_st' => 0, 'active_st' => 1])
                                       ->order_by('pegawai_nm', 'ASC')
                                       ->get()->result_array();
 
-        $this->render($this->template . 'form_modal', $d);
+        $this->render($this->view_path . 'form_modal', $data);
     }
 
     public function save($id = null)
     {
-        $d = _post();
-
-        if (empty($d['keluar_tgl'])) { _json(['status' => false, 'msg' => 'Tanggal wajib diisi.']); return; }
-        if (empty($d['persediaan_id'])) { _json(['status' => false, 'msg' => 'Barang wajib dipilih.']); return; }
-        if (empty($d['keluar_qty']) || $d['keluar_qty'] <= 0) { _json(['status' => false, 'msg' => 'Jumlah harus lebih dari 0.']); return; }
-
-        // [FIX] Konversi Tanggal
-        $tgl_raw = $d['keluar_tgl'];
-        $tgl_sql = $tgl_raw;
-        if (strpos($tgl_raw, '-') !== false) {
-            $tgl_sql = date('Y-m-d', strtotime($tgl_raw));
+        if ($id != null) {
+             _json(['status' => false, 'msg' => 'Edit data dikunci demi keamanan stok.']);
+             return;
         }
 
-        // 1. VALIDASI STOK
-        $stok_sekarang = $this->m_persediaan_keluar->get_stok_item($d['persediaan_id']);
-        if ($d['keluar_qty'] > $stok_sekarang) {
-             _json(['status' => false, 'msg' => 'Gagal! Stok tidak mencukupi. Sisa stok: ' . $stok_sekarang]); return;
-        }
+        $input = _post();
 
-        // 2. Generate No Transaksi
-        $no_struk = $d['struk_no'];
-        if (empty($no_struk) || strpos($no_struk, '-AUTO') !== false) {
-             $kategori = $this->db->get_where('mst_kategori_persediaan', ['kategori_id' => $d['kategori_temp']])->row();
-             $kode_kat = ($kategori) ? 'OUT-' . $kategori->kategori_kd : 'OUT';
-             // Gunakan tanggal SQL
-             $no_struk = $this->m_persediaan_keluar->get_nomor_urut($kode_kat, $tgl_sql);
-        }
+        // 1. Validasi Input (Guard Clauses)
+        if (empty($input['keluar_tgl'])) { _json(['status' => false, 'msg' => 'Tanggal wajib diisi.']); return; }
+        if (empty($input['persediaan_id'])) { _json(['status' => false, 'msg' => 'Barang wajib dipilih.']); return; }
+        if (empty($input['keluar_qty']) || $input['keluar_qty'] <= 0) { _json(['status' => false, 'msg' => 'Jumlah harus lebih dari 0.']); return; }
+
+        // 2. Cek Kecukupan Stok
+        $is_stock_ok = $this->_validate_stock($input['persediaan_id'], $input['keluar_qty']);
+        if (!$is_stock_ok) return; // Pesan error sudah dikirim di dalam fungsi _validate
+
+        // 3. Persiapan Data
+        $tgl_sql = $this->_convert_date($input['keluar_tgl']);
+        $no_struk = $this->_generate_transaction_number($input, $tgl_sql);
 
         $data_header = [
             'struk_no'       => $no_struk,
-            'keluar_tgl'     => $tgl_sql, // Masuk DB YYYY-MM-DD
-            'keperluan_jenis'=> $d['keperluan_jenis'],
-            'penerima_nm'    => $d['penerima_nm'],
-            'keterangan_txt' => $d['keterangan_txt'],
-            'total_qty'      => $d['keluar_qty'],
-            'active_st'      => 1
+            'keluar_tgl'     => $tgl_sql,
+            'keperluan_jenis'=> $input['keperluan_jenis'],
+            'penerima_nm'    => $input['penerima_nm'],
+            'keterangan_txt' => $input['keterangan_txt'],
+            'total_qty'      => $input['keluar_qty'],
+            'active_st'      => 1,
+            'deleted_st'     => 0,
+            'created_at'     => date('Y-m-d H:i:s'),
+            'created_by'     => $this->session->userdata('user_id')
         ];
 
         $data_detail = [
-            'persediaan_id'  => $d['persediaan_id'],
-            'satuan_id'      => $d['satuan_id'],
-            'keluar_qty'     => $d['keluar_qty'],
+            'persediaan_id'  => $input['persediaan_id'],
+            'satuan_id'      => $input['satuan_id'],
+            'keluar_qty'     => $input['keluar_qty'],
             'keterangan_txt' => '',
-            'created_at'     => date('Y-m-d H:i:s'),
-            'created_by'     => $this->session->userdata('user_id'),
             'active_st'      => 1,
-            'deleted_st'     => 0
+            'deleted_st'     => 0,
+            'created_at'     => date('Y-m-d H:i:s'),
+            'created_by'     => $this->session->userdata('user_id')
         ];
 
-        if ($id == null) {
-            $data_header['created_at'] = date('Y-m-d H:i:s');
-            $data_header['created_by'] = $this->session->userdata('user_id');
-            $data_header['deleted_st'] = 0;
+        // 4. Eksekusi
+        $status = $this->model->simpan_pemakaian($data_header, [$data_detail]);
 
-            $status = $this->m_persediaan_keluar->simpan_pemakaian($data_header, [$data_detail]);
-
-            if ($status) {
-                _json(_response('01', site_url($this->uri)));
-            } else {
-                _json(['status' => false, 'msg' => 'Gagal menyimpan transaksi.']);
-            }
+        if ($status) {
+            _json(_response('01', $this->uri));
         } else {
-             _json(['status' => false, 'msg' => 'Edit data dikunci demi keamanan stok.']);
+            _json(['status' => false, 'msg' => 'Gagal menyimpan transaksi.']);
         }
     }
     
-    public function delete($id = null) {
-        $w = [$this->pk_id => $id];
-        DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
-        _json(_response('03', site_url($this->uri)));
+    public function delete($id = null) 
+    {
+        if (empty($id)) return;
+        
+        $where = [$this->pk_id => $id];
+        DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $where);
+        
+        _json(_response('03', $this->uri));
+    }
+
+    // --- AJAX Methods ---
+
+    public function get_stok_saat_ini()
+    {
+        $id = $this->input->get('persediaan_id');
+        if(empty($id)) { echo json_encode(['status'=>false]); return; }
+
+        $stok = $this->model->get_stok_item($id);
+        echo json_encode(['status'=>true, 'stok'=>$stok]);
+    }
+
+    // --- Private Helpers ---
+
+    private function _validate_stock($persediaan_id, $qty_input)
+    {
+        $stok_sekarang = $this->model->get_stok_item($persediaan_id);
+        if ($qty_input > $stok_sekarang) {
+             _json(['status' => false, 'msg' => 'Gagal! Stok tidak mencukupi. Sisa stok: ' . $stok_sekarang]); 
+             return false;
+        }
+        return true;
+    }
+
+    private function _generate_transaction_number($input, $tgl_sql)
+    {
+        $no_struk = $input['struk_no'];
+        
+        // Jika Auto atau Kosong, generate baru
+        if (empty($no_struk) || strpos($no_struk, '-AUTO') !== false) {
+             $kategori_id = $input['kategori_temp'];
+             
+             // Ambil Kode Kategori
+             $kategori = $this->db->get_where('mst_kategori_persediaan', ['kategori_id' => $kategori_id])->row();
+             $kode_kat = ($kategori) ? 'OUT-' . $kategori->kategori_kd : 'OUT';
+             
+             return $this->model->get_nomor_urut($kode_kat, $tgl_sql);
+        }
+        
+        return $no_struk;
+    }
+
+    private function _convert_date($date_raw)
+    {
+        if (empty($date_raw)) return date('Y-m-d');
+        if (strpos($date_raw, '-') !== false) {
+            $parts = explode('-', $date_raw);
+            if (count($parts) == 3 && strlen($parts[2]) == 4) {
+                return $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+            }
+        }
+        return $date_raw;
     }
 }
