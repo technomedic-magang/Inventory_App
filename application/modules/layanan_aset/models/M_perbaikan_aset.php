@@ -101,7 +101,12 @@ class M_perbaikan_aset extends CI_Model
         if($length != -1) $this->db->limit($length, $start);
 
         $data_raw = $this->db->get()->result_array();
-
+        
+        // --- [HITUNG TOTAL DATA (JUGA HARUSDIFILTER)] ---
+        // Kita harus reset query builder untuk menghitung total agar filternya juga berlaku untuk pagination
+        // Namun cara paling aman di Datatables CI adalah menghitung ulang dengan kondisi yang sama.
+        
+        // Count All (Sesuai Role)
         $this->db->from($this->table . ' s');
         $this->db->where('s.deleted_st', 0);
         if ($role_id_user != $superadmin_code) {

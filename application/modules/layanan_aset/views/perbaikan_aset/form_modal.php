@@ -1,11 +1,6 @@
 <?php 
-// 1. Tentukan Mode: Read Only jika ID ada DAN status bukan 0 (Pending)
+// Tentukan Mode: Read Only jika ID ada DAN status bukan 0 (Pending)
 $is_readonly = ($id && @$main['status_tiket'] != 0); 
-
-// Helper untuk data aset
-$asset_kd = @$asset_detail['asset_kd'] ?? '-';
-$asset_nm = @$asset_detail['asset_nm'] ?? '-';
-$asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
 ?>
 
 <form id="form" action="<?= $form_act ?>" method="post" autocomplete="off" enctype="multipart/form-data">
@@ -18,11 +13,7 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
                 <div class="col-md-6">
                     <small class="text-muted d-block">No. Tiket:</small>
                     <div class="fw-bold text-primary">
-                        <?php if($id): ?>
-                            <?= 'SERV/'.date('Y.m', strtotime($main['created_at'])).'/'.$asset_kd.'/'.str_pad($id, 4, '0', STR_PAD_LEFT) ?>
-                        <?php else: ?>
-                            <input type="text" id="no_tiket_display" class="form-control-plaintext py-0 fw-bold text-primary" value="Auto Generate..." readonly>
-                        <?php endif; ?>
+                        <?= ($id) ? 'SERV/'.date('Y.m', strtotime($main['created_at'])).'/'.$asset_detail['asset_kd'].'/'.str_pad($id, 4, '0', STR_PAD_LEFT) : 'Generating...' ?>
                     </div>
                 </div>
                 <div class="col-md-6 text-md-end">
@@ -33,14 +24,13 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
                         elseif($st == '1') echo '<span class="badge bg-yellow-lt">Sedang Diproses</span>';
                         elseif($st == '2') echo '<span class="badge bg-green text-white">Selesai</span>';
                         elseif($st == '9') echo '<span class="badge bg-secondary text-white">Ditolak</span>';
-                        else echo '<span class="badge bg-secondary">Draft Baru</span>';
+                        else echo '<span class="badge bg-secondary">Draft</span>';
                      ?>
                 </div>
             </div>
         </div>
 
         <?php if($is_readonly): ?>
-
             <div class="hr-text text-blue">Detail Pengerjaan</div>
 
             <?php if($main['status_tiket'] == 1): ?>
@@ -48,14 +38,10 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
                     <div class="display-6"><i class="fas fa-tools"></i></div>
                     <h3 class="mt-2 mb-0">Sedang Dalam Perbaikan</h3>
                     <p class="text-muted">Dijadwalkan pada: <strong><?= date('d-m-Y', strtotime($main['tgl_rencana'])) ?></strong></p>
-                    
-                    <?php if(!empty($main['keterangan_txt'])): ?>
-                         <div class="badge bg-blue text-white mb-2"><?= $main['keterangan_txt'] ?></div>
-                    <?php endif; ?>
                 </div>
             
             <?php elseif($main['status_tiket'] == 2): ?>
-                <div class="row row-cards mb-3">
+                <div class="row row-cards">
                     <div class="col-md-6">
                         <div class="card card-sm border-success">
                             <div class="card-body">
@@ -86,36 +72,72 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
                                     </div>
                                     <div class="col-auto border-start ps-3">
                                         <div class="text-muted">Kondisi Akhir:</div>
-                                        <span class="badge bg-azure"><?= $asset_kondisi ?></span>
+                                        <span class="badge bg-azure"><?= $asset_detail['asset_kondisi'] ?></span>
                                     </div>
-                                    <?php if(!empty($main['keterangan_txt'])): ?>
-                                    <div class="col-auto border-start ps-3">
-                                        <div class="text-muted">Jenis Tindakan:</div>
-                                        <span class="fw-bold text-primary"><?= $main['keterangan_txt'] ?></span>
-                                    </div>
-                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-            <?php elseif($main['status_tiket'] == 9): ?>
-                <div class="text-center py-4 bg-red-lt rounded mb-3">
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card bg-light border-success-lt">
+                            <div class="card-body p-2">
+                                <h4 class="text-center text-success mb-3 border-bottom pb-2">Dokumentasi Perbaikan</h4>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="badge bg-secondary mb-2">KONDISI AWAL (BEFORE)</div><br>
+                                        <?php if(!empty($main['keluhan_foto'])): ?>
+                                            <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['keluhan_foto'] ?>" target="_blank">
+                                                <img src="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['keluhan_foto'] ?>" 
+                                                     class="img-fluid rounded shadow-sm border" 
+                                                     style="max-height:150px; object-fit: cover;">
+                                            </a>
+                                        <?php else: ?>
+                                            <div class="p-3 border rounded bg-white text-muted small fst-italic">
+                                                Tidak ada foto
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="col-6 border-start">
+                                        <div class="badge bg-success mb-2">HASIL PERBAIKAN (AFTER)</div><br>
+                                        <?php if(!empty($main['pengerjaan_foto'])): ?>
+                                            <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['pengerjaan_foto'] ?>" target="_blank">
+                                                <img src="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['pengerjaan_foto'] ?>" 
+                                                     class="img-fluid rounded shadow-sm border border-success" 
+                                                     style="max-height:150px; object-fit: cover;">
+                                            </a>
+                                        <?php else: ?>
+                                            <div class="p-3 border rounded bg-white text-muted small fst-italic">
+                                                Belum ada foto bukti
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php elseif($main['status_tiket'] == 9): ?>
+                <div class="text-center py-4 bg-red-lt rounded">
                     <div class="display-6"><i class="fas fa-ban"></i></div>
                     <h3 class="mt-2 text-danger">Laporan Ditolak</h3>
+                    <p>Mohon hubungi admin untuk informasi lebih lanjut.</p>
                 </div>
             <?php endif; ?>
 
             <div class="mt-4">
                 <label class="form-label">Data Laporan Anda:</label>
                 <div class="form-control-plaintext border p-2 rounded bg-light">
-                    <strong>Aset:</strong> [<?= $asset_kd ?>] <?= $asset_nm ?><br>
+                    <strong>Aset:</strong> [<?= $asset_detail['asset_kd'] ?>] <?= $asset_detail['asset_nm'] ?><br>
                     <strong>Tgl Lapor:</strong> <?= date('d-m-Y', strtotime($main['created_at'])) ?><br>
                     <strong>Keluhan:</strong> <?= $main['keluhan_deskripsi'] ?>
-                    <?php if(!empty($main['keluhan_foto'])): ?>
+                    
+                    <?php if(!empty($main['keluhan_foto']) && $main['status_tiket'] != 2): ?>
                         <div class="mt-2">
-                            <a href="<?= base_url("uploads/service/".$main['keluhan_foto']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <a href="<?= 'http://localhost/Project_Magang_API/uploads/keluhan/' . $main['keluhan_foto'] ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-image me-1"></i> Lihat Foto Bukti
                             </a>
                         </div>
@@ -128,7 +150,6 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
             </div>
 
         <?php else: ?>
-
             <div class="mb-1 row">
                 <label class="col-lg-3 col-md-4 col-form-label">Pelapor</label>
                 <div class="col-lg-8 col-md-8">
@@ -156,14 +177,26 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
                     <select name="asset_id" id="asset_id" class="form-select select2-modal" required onchange="onAssetChange()">
                         <option value="">- Cari Nama / Kode Aset -</option>
                         <?php foreach ($list_asset as $k): ?>
+                            <?php 
+                                $is_repair  = (isset($k['status_perbaikan']) && $k['status_perbaikan'] > 0);
+                                $is_current = (@$main['asset_id'] == $k['asset_id']); 
+                                
+                                $disabled = ($is_repair && !$is_current) ? 'disabled' : '';
+                                $info_txt = ($is_repair && !$is_current) ? ' (SEDANG DIPERBAIKI)' : '';
+                                
+                                $style    = ($is_repair && !$is_current) ? 'background-color: #fceceb; color: #d63939;' : '';
+                            ?>
                             <option value="<?= $k['asset_id'] ?>" 
                                     data-kode="<?= $k['kategori_kd'] ?>"
                                     data-kat-id="<?= $k['kategori_id'] ?>" 
-                                    <?= (@$main['asset_id'] == $k['asset_id']) ? 'selected' : '' ?>>
-                                [<?= $k['asset_kd'] ?>] <?= $k['asset_nm'] ?>
+                                    <?= ($is_current) ? 'selected' : '' ?>
+                                    <?= $disabled ?>
+                                    style="<?= $style ?>">
+                                [<?= $k['asset_kd'] ?>] <?= $k['asset_nm'] . $info_txt ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <small class="text-danger d-none" id="warning_repair">* Aset yang sedang diperbaiki tidak dapat dipilih.</small>
                 </div>
             </div>
 
@@ -252,29 +285,6 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
                     </div>
                 </div>
             </div>
-            
-            <div id="area-ac" class="d-none">
-                <div class="border-dotted my-3"></div>
-                <h4 class="mb-3 text-info"><i class="fas fa-wind me-2"></i>Data Khusus AC</h4>
-                
-                <div class="mb-1 row">
-                    <label class="col-lg-3 col-md-4 col-form-label required">Jenis Tindakan</label>
-                    <div class="col-lg-8 col-md-8">
-                        <?php 
-                            // Mengambil data lama jika edit (misal disimpan di keterangan_txt)
-                            $val_ac = @$main['keterangan_txt']; 
-                        ?>
-                        <select name="jenis_perbaikan_ac" id="jenis_perbaikan_ac" class="form-select">
-                            <option value="">- Pilih Jenis Tindakan -</option>
-                            <option value="Cuci AC" <?= ($val_ac == 'Cuci AC') ? 'selected' : '' ?>>Cuci AC (Maintenance Rutin)</option>
-                            <option value="Isi Freon" <?= ($val_ac == 'Isi Freon') ? 'selected' : '' ?>>Isi Freon</option>
-                            <option value="Perbaikan Sparepart" <?= ($val_ac == 'Perbaikan Sparepart') ? 'selected' : '' ?>>Perbaikan Sparepart</option>
-                            <option value="Bongkar Pasang" <?= ($val_ac == 'Bongkar Pasang') ? 'selected' : '' ?>>Bongkar Pasang</option>
-                            <option value="Lainnya" <?= ($val_ac == 'Lainnya') ? 'selected' : '' ?>>Lainnya</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
 
             <div class="row mt-4">
                 <div class="col-12 text-end">
@@ -297,10 +307,16 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
     var lastDateValue = ''; 
 
     $(document).ready(function() {
-        // Simpan semua data aset ke array untuk filter
         $('#asset_id option').each(function() {
             if($(this).val() != '') { 
-                allAssets.push({ value: $(this).val(), text: $(this).text(), katId: $(this).data('kat-id'), kode: $(this).data('kode') });
+                allAssets.push({ 
+                    value: $(this).val(), 
+                    text: $(this).text(), 
+                    katId: $(this).data('kat-id'), 
+                    kode: $(this).data('kode'),
+                    disabled: $(this).is(':disabled'), 
+                    style: $(this).attr('style')
+                });
             }
         });
 
@@ -313,14 +329,13 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
 
         if ($('#filter_kategori').val() == "") { filterAssetByKategori(); }
         
-        cekJenisAset(); // Cek awal
+        cekJenisAset();
         toggleFormKM(); 
 
         <?php if(!$id): ?>
             startDateWatcher();   
         <?php endif; ?>
 
-        // Logic Auto Calculate KM Kendaraan
         $('#kilometer_saat_ini').on('keyup input', function() {
             if($('#jenis_perbaikan_km').val() == '1') {
                 var valStr = $(this).val().replace(/\./g, '');
@@ -411,7 +426,10 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
         $.each(allAssets, function(index, item) {
             if (katID === "" || item.katId == katID) {
                 var isSelected = (item.value == currentSelected) ? 'selected' : '';
-                $assetSelect.append('<option value="'+item.value+'" data-kat-id="'+item.katId+'" data-kode="'+item.kode+'" '+isSelected+'>'+item.text+'</option>');
+                var disabledAttr = item.disabled ? 'disabled' : '';
+                var styleAttr = item.style ? 'style="' + item.style + '"' : '';
+                
+                $assetSelect.append('<option value="'+item.value+'" data-kat-id="'+item.katId+'" data-kode="'+item.kode+'" '+isSelected+' '+disabledAttr+' '+styleAttr+'>'+item.text+'</option>');
             }
         });
         
@@ -419,28 +437,15 @@ $asset_kondisi = @$asset_detail['asset_kondisi'] ?? '-';
         if (!currentSelected) { $assetSelect.val('').trigger('change'); }
     }
 
-    // --- LOGIKA UTAMA: DETEKSI KENDARAAN VS AC ---
     function cekJenisAset() {
         var $selectedOption = $('#asset_id').find('option:selected');
         var katKode = $selectedOption.attr('data-kode'); 
-        var namaAset = $selectedOption.text().toUpperCase(); // Ambil teks nama aset
-
-        // 1. Reset Semua
-        $('#area-kendaraan').addClass('d-none');
-        $('#area-ac').addClass('d-none');
         
-        // 2. Cek Kendaraan (K2, K4, dll)
-        if(katKode == 'K2' || katKode == 'K4' || katKode == 'KENDARAAN' || katKode == 'MOBIL' || katKode == 'MOTOR') {
+        if(katKode == 'K2' || katKode == 'K4' || katKode == 'KENDARAAN') {
             $('#area-kendaraan').removeClass('d-none');
-        
-        // 3. Cek AC (Kode 'AC' atau Nama mengandung 'AC')
-        } else if(katKode == 'AC' || namaAset.includes('AC ') || namaAset.includes('AIR CONDITIONER')) {
-            $('#area-ac').removeClass('d-none');
-        
-        // 4. Default: Sembunyikan semua input khusus
         } else {
+            $('#area-kendaraan').addClass('d-none');
             $('#kilometer_saat_ini').val('');
-            $('#jenis_perbaikan_ac').val('');
         }
     }
 </script>
