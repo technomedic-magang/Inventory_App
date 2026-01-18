@@ -1,6 +1,7 @@
 <?php include('_js.php') ?>
 
 <div class="page-wrapper">
+  
   <div class="page-header d-print-none mt-2">
     <div class="container-xl">
       <div class="row align-items-center">
@@ -11,56 +12,90 @@
         
         <div class="col-auto ms-auto d-print-none">
           <?php if(!$is_closed): ?>
-             <button class="btn btn-warning" 
-                onclick="_modal(event, {uri: '<?= site_url($this->uri_mod . "/form_modal_tutup_buku") ?>', size: 'modal-md', title: 'Konfirmasi Tutup Buku'})">
+             <button class="btn btn-warning shadow-sm" 
+                onclick="_modal(event, {uri: '<?= $this->uri . "/form_modal_tutup_buku" ?>', size: 'modal-md', title: 'Konfirmasi Tutup Buku'})">
                 <i class="fas fa-lock me-2"></i> Tutup Buku Periode <?= $periode_text ?>
              </button>
           <?php else: ?>
-             <button class="btn btn-secondary" disabled>
+             <span class="badge bg-green-lt p-2 shadow-sm border border-green">
                 <i class="fas fa-check-circle me-2"></i> Periode <?= $periode_text ?> Ditutup
-             </button>
+             </span>
           <?php endif; ?>
         </div>
       </div>
     </div>
   </div>
   
-  <div class="page-wrapper">
-    <div class="page-body mt-2">
-      <div class="container-xl">
+  <div class="page-body mt-3">
+    <div class="container-xl">
         
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <div class="card card-sm">
+        <div class="row row-deck row-cards mb-3">
+            
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm border-1 shadow-sm">
                     <div class="card-body">
-                        <div class="text-muted">Total Nilai Perolehan</div>
-                        <div class="display-6 fw-bold text-blue">Rp <?= number_format($summary['total_aset_awal'], 0, ',', '.') ?></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-muted">Akumulasi Valuasi (+/-)</div>
-                        <div class="display-6 fw-bold <?= ($summary['total_akumulasi'] < 0) ? 'text-red' : 'text-green' ?>">
-                            Rp <?= number_format($summary['total_akumulasi'], 0, ',', '.') ?>
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <span class="bg-blue text-white avatar avatar-md rounded">
+                                    <i class="fas fa-shopping-basket"></i>
+                                </span>
+                            </div>
+                            <div class="col">
+                                <div class="text-muted font-weight-medium">Total Nilai Perolehan</div>
+                                <div class="display-6 fw-bold text-blue">
+                                    Rp <?= number_format($summary['total_aset_awal'], 0, ',', '.') ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card card-sm">
-                    <div class="card-body bg-green-lt">
-                        <div class="text-muted">Nilai Buku Bersih (Saat Ini)</div>
-                        <div class="display-6 fw-bold text-green">Rp <?= number_format($summary['total_nilai_buku'], 0, ',', '.') ?></div>
+
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm border-1 shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <span class="bg-red text-white avatar avatar-md rounded">
+                                    <i class="fas fa-chart-line"></i>
+                                </span>
+                            </div>
+                            <div class="col">
+                                <div class="text-muted font-weight-medium">Akumulasi Valuasi (+/-)</div>
+                                <div class="display-6 fw-bold <?= ($summary['total_akumulasi'] < 0) ? 'text-red' : 'text-green' ?>">
+                                    Rp <?= number_format($summary['total_akumulasi'], 0, ',', '.') ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm border-1 shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <span class="bg-green text-white avatar avatar-md rounded">
+                                    <i class="fas fa-wallet"></i>
+                                </span>
+                            </div>
+                            <div class="col">
+                                <div class="text-muted font-weight-medium">Nilai Buku Bersih</div>
+                                <div class="display-6 fw-bold text-green">
+                                    Rp <?= number_format($summary['total_nilai_buku'], 0, ',', '.') ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card">
+        <div class="card border-1 shadow-sm">
             <div class="card-body p-2">
                 <div class="w-100">
+                    
                     <div class="row mb-3">
                         <div class="col-md-4 col-sm-6">
                             <label class="form-label">Filter Kategori Aset:</label>
@@ -91,11 +126,11 @@
                             <tbody></tbody> 
                         </table>
                     </div>
+
                 </div>
             </div>
         </div>
 
-      </div>
     </div>
   </div>
 </div>

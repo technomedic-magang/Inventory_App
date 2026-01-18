@@ -286,14 +286,20 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                 </div>
             </div>
 
-            <div class="row mt-4">
-                <div class="col-12 text-end">
+            <div class="border-dotted my-3"></div>
+        
+            <div class="row mt-2">
+                <div class="col-9 offset-3">
                     <button type="submit" class="btn btn-primary" onclick="_save(event)">
                         <i class="fas fa-paper-plane me-1"></i> Kirim Laporan
                     </button>
-                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">
+                        <?= _icon('cancel') ?> Batal
+                    </button>
                 </div>
             </div>
+
+            
 
         <?php endif; // END IF READONLY ?>
 

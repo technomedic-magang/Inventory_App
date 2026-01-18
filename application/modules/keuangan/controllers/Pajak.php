@@ -3,161 +3,213 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Pajak extends MY_Controller
 {
+    protected $view_path = 'keuangan/pajak/';
+    protected $uri_path  = 'keuangan/pajak';
+
     public function __construct()
     {
         parent::__construct();
         _models(['keuangan/m_pajak']); 
         
-        $this->table = $this->m_pajak->table;
-        $this->pk_id = $this->m_pajak->pk_id;
-        $this->template = 'keuangan/pajak/'; 
-        $this->uri_mod = 'keuangan/pajak'; 
+        $this->model = $this->m_pajak;
+        $this->table = $this->model->table;
+        $this->pk_id = $this->model->pk_id;
+        
+        // [STANDAR] Full URL
+        $this->uri = site_url($this->uri_path); 
     }
 
     public function index()
     {
-        $this->render($this->template . 'index');
+        // Ambil Data Ringkasan untuk Dashboard Atas
+        $data['summary'] = $this->model->get_dashboard_stats();
+        $this->render($this->view_path . 'index', $data);
     }
 
     public function ajax_datatables()
     {
-        $this->m_pajak->load_datatables();
+        $this->model->load_datatables();
     }
 
-    // --- [PERBAIKAN UTAMA DISINI] ---
     public function form_modal($id = null)
     {
-        $d['main'] = DB::get($this->table, [$this->pk_id => $id]);
-        $d['form_act'] = site_url($this->uri_mod . '/save/' . $id);
+        $data = [];
+        $data['main'] = DB::get($this->table, [$this->pk_id => $id]);
+        $data['form_act'] = $this->uri . '/save/' . $id;
 
         if ($id == null) {
-            $d['preview_no'] = $this->m_pajak->get_auto_number(date('Y-m-d'));
+            $data['preview_no'] = $this->model->get_auto_number(date('Y-m-d'));
         }
 
-        // Ambil list aset aktif DENGAN JOIN ATRIBUT (Adaptasi dari M_kembali)
-        $this->db->select('a.asset_id, a.asset_nm, a.asset_kd, a.tgl_pajak_tahunan, a.tgl_pajak_plat, k.kategori_nm');
-        
-        // Ambil Nopol dari tabel value (menggunakan alias nopol_asli agar tidak tertukar)
-        $this->db->select('v_nopol.value_isi as nopol_asli');
+        // Ambil List Aset untuk Dropdown
+        $data['list_asset'] = $this->model->get_active_assets_for_tax();
 
-        $this->db->from('mst_asset a');
-        $this->db->join('mst_kategori k', 'a.kategori_id = k.kategori_id');
-
-        // --- ADAPTASI DARI PROGRAM KEMBALI ---
-        // Cari atribut yang labelnya mengandung kata 'Polisi' (misal: No. Polisi / Nomor Polisi)
-        $this->db->join('mst_kategori_atribut attr_nopol', "attr_nopol.kategori_id = a.kategori_id AND attr_nopol.atribut_label LIKE '%Polisi%'", 'left');
-        // Ambil isinya dari tabel dat_asset_value
-        $this->db->join('dat_asset_value v_nopol', 'v_nopol.asset_id = a.asset_id AND v_nopol.atribut_id = attr_nopol.atribut_id', 'left');
-        // -------------------------------------
-
-        $this->db->where('a.deleted_st', 0);
-        $this->db->where('a.active_st', 1);
-        $this->db->order_by('a.asset_nm', 'ASC');
-
-        $d['list_asset'] = $this->db->get()->result_array();
-
-        $this->render($this->template . 'form_modal', $d);
+        $this->render($this->view_path . 'form_modal', $data);
     }
 
     public function save($id = null)
     {
-        if ($id != null) return; 
-
-        // 1. Konversi Tanggal
-        $tgl_raw = $this->input->post('transaksi_tgl');
-        $tgl_sql = (strpos($tgl_raw, '-') !== false) ? date('Y-m-d', strtotime($tgl_raw)) : date('Y-m-d');
-
-        $asset_id    = $this->input->post('asset_id');
-        $jenis_pajak = $this->input->post('pajak_jenis'); 
-        
-        // Input user (hanya relevan untuk kendaraan 5 tahunan)
-        $nopol_input = strtoupper($this->input->post('nopol_baru')); 
-
-        $asset_lama = $this->db->get_where('mst_asset', ['asset_id' => $asset_id])->row();
-        $update_master = ['updated_at' => date('Y-m-d H:i:s')];
-        
-        // --- LOGIKA PERHITUNGAN JATUH TEMPO ---
-        $last_due_date = (!empty($asset_lama->tgl_pajak_tahunan)) ? $asset_lama->tgl_pajak_tahunan : $tgl_sql;
-        $next_due_date = date('Y-m-d', strtotime('+1 year', strtotime($last_due_date)));
-        
-        // Update Jatuh Tempo Tahunan
-        $update_master['tgl_pajak_tahunan'] = $next_due_date;
-
-        // --- LOGIKA KHUSUS KENDARAAN (5 TAHUNAN) ---
-        if ($jenis_pajak == '5_TAHUNAN') {
-            $last_plat = (!empty($asset_lama->tgl_pajak_plat)) ? $asset_lama->tgl_pajak_plat : $tgl_sql;
-            $next_plat = date('Y-m-d', strtotime('+5 years', strtotime($last_plat)));
-            
-            $update_master['tgl_pajak_plat'] = $next_plat;
-            
-            if (!empty($nopol_input)) $update_master['nopol'] = $nopol_input;
+        if ($id != null) {
+            _json(['status' => false, 'msg' => 'Edit data pajak dikunci untuk menjaga integritas history.']);
+            return;
         }
 
-        // --- SIMPAN DATA ---
-        $auto_no = $this->m_pajak->get_auto_number($tgl_sql);
+        $input = _post();
+
+        // 1. Validasi Input
+        if (empty($input['asset_id'])) { _json(['status' => false, 'msg' => 'Aset wajib dipilih.']); return; }
+        if (empty($input['transaksi_tgl'])) { _json(['status' => false, 'msg' => 'Tanggal Bayar wajib diisi.']); return; }
+        if (empty($input['nominal_pokok'])) { _json(['status' => false, 'msg' => 'Nominal Pokok wajib diisi.']); return; }
+
+        // 2. Upload Bukti (Jika ada)
+        $file_name = $this->_handle_upload_bukti();
+        if ($file_name === false) return; // Error handled inside
+
+        // 3. Persiapan Data (Hitung Tanggal & Nominal)
+        $asset_id = $input['asset_id'];
+        $tgl_bayar = $this->_convert_date($input['transaksi_tgl']);
         
-        // Upload Bukti
-        $file_name = null;
-        if (!empty($_FILES['bukti_file']['name'])) {
-            $config['upload_path']   = './uploads/pajak/';
-            $config['allowed_types'] = 'jpg|jpeg|png|pdf';
-            $config['max_size']      = 2048; 
-            $config['file_name']     = 'TAX_' . time();
-            $this->load->library('upload', $config);
-            if ($this->upload->do_upload('bukti_file')) {
-                $file_name = $this->upload->data('file_name');
-            }
-        }
+        // Kalkulasi Tanggal Jatuh Tempo Berikutnya
+        $dates = $this->_calculate_next_dates($asset_id, $tgl_bayar, $input['pajak_jenis']);
+        
+        // Persiapan Data Transaksi
+        $data_trx = $this->_prepare_transaction_data($input, $tgl_bayar, $dates['next_due'], $file_name);
 
-        $nominal_pokok = (int) str_replace('.', '', $this->input->post('nominal_pokok'));
-        $nominal_denda = (int) str_replace('.', '', $this->input->post('nominal_denda'));
-        $nominal_total = $nominal_pokok + $nominal_denda;
+        // Persiapan Data Update Master Aset
+        $data_asset_update = $this->_prepare_asset_update($input, $dates);
 
-        $data_trx = [
-            'transaksi_no'    => $auto_no,
-            'transaksi_tgl'   => $tgl_sql,
-            'jatuh_tempo_tgl' => $next_due_date,
-            'asset_id'        => $asset_id,
-            'pajak_jenis'     => $jenis_pajak,
-            'nopol_lama'      => $asset_lama->nopol,
-            'nopol_baru'      => ($jenis_pajak == '5_TAHUNAN' && !empty($nopol_input)) ? $nopol_input : $asset_lama->nopol,
-            'nominal_pokok'   => $nominal_pokok,
-            'nominal_denda'   => $nominal_denda,
-            'nominal_total'   => $nominal_total,
-            'transaksi_ket'   => $this->input->post('transaksi_ket'),
-            'bukti_file'      => $file_name,
-            'created_by'      => $this->session->userdata('user_id'),
-            'created_at'      => date('Y-m-d H:i:s'),
-            'active_st'       => 1
-        ];
+        // 4. Eksekusi Database (Transaction)
+        $status = $this->model->simpan_pembayaran($data_trx, $asset_id, $data_asset_update);
 
-        $this->db->trans_start();
-        $this->db->insert($this->table, $data_trx);
-        $this->db->where('asset_id', $asset_id)->update('mst_asset', $update_master);
-        $this->db->trans_complete();
-
-        if ($this->db->trans_status() === TRUE) {
-            _json(_response('01', site_url($this->uri_mod)));
+        if ($status) {
+            _json(_response('01', $this->uri));
         } else {
-            if($file_name) unlink('./uploads/pajak/'.$file_name);
-            _json(['status' => '00', 'msg' => 'Gagal menyimpan data pajak.']);
+            // Hapus file jika gagal database
+            if ($file_name) @unlink('./uploads/pajak/' . $file_name);
+            _json(['status' => false, 'msg' => 'Gagal menyimpan data pajak.']);
         }
     }
 
     public function delete($id = null)
     {
+        if (empty($id)) return;
+        
+        // Soft Delete
         $w = [$this->pk_id => $id];
         DB::update($this->table, ['deleted_st' => 1, 'active_st' => 0], $w);
-        _json(_response('03', site_url($this->uri_mod)));
+        
+        _json(_response('03', $this->uri));
     }
     
     public function get_no_transaksi_ajax()
     {
+        header('Content-Type: application/json');
         $tgl_raw = $this->input->post('tanggal');
-        $tgl_sql = date('Y-m-d');
-        if (strpos($tgl_raw, '-') !== false) {
-            $tgl_sql = date('Y-m-d', strtotime($tgl_raw));
+        $tgl_sql = $this->_convert_date($tgl_raw);
+        
+        echo json_encode(['new_no' => $this->model->get_auto_number($tgl_sql)]);
+    }
+
+    // --- Private Helper Methods ---
+
+    private function _handle_upload_bukti()
+    {
+        if (empty($_FILES['bukti_file']['name'])) return null;
+
+        $config['upload_path']   = './uploads/pajak/';
+        $config['allowed_types'] = 'jpg|jpeg|png|pdf';
+        $config['max_size']      = 5120; // 5MB
+        $config['file_name']     = 'TAX_' . time();
+        
+        $this->load->library('upload', $config);
+        
+        if ($this->upload->do_upload('bukti_file')) {
+            return $this->upload->data('file_name');
+        } else {
+            _json(['status' => false, 'msg' => 'Upload Gagal: ' . $this->upload->display_errors('', '')]);
+            return false;
         }
-        echo json_encode(['new_no' => $this->m_pajak->get_auto_number($tgl_sql)]);
+    }
+
+    private function _calculate_next_dates($asset_id, $tgl_bayar, $jenis_pajak)
+    {
+        $asset = $this->db->get_where('mst_asset', ['asset_id' => $asset_id])->row();
+        
+        // Logic: Jika ada history tgl jatuh tempo sebelumnya, gunakan itu sebagai basis.
+        // Jika tidak, gunakan tanggal bayar saat ini.
+        $last_due = (!empty($asset->tgl_pajak_tahunan)) ? $asset->tgl_pajak_tahunan : $tgl_bayar;
+        $next_due = date('Y-m-d', strtotime('+1 year', strtotime($last_due)));
+
+        $next_plat = null;
+        if ($jenis_pajak == '5_TAHUNAN') {
+            $last_plat = (!empty($asset->tgl_pajak_plat)) ? $asset->tgl_pajak_plat : $tgl_bayar;
+            $next_plat = date('Y-m-d', strtotime('+5 years', strtotime($last_plat)));
+        }
+
+        return ['next_due' => $next_due, 'next_plat' => $next_plat];
+    }
+
+    private function _prepare_transaction_data($input, $tgl_bayar, $next_due, $file_name)
+    {
+        $pokok = (int) str_replace('.', '', $input['nominal_pokok']);
+        $denda = (int) str_replace('.', '', $input['nominal_denda']);
+        
+        // Ambil Nopol Lama untuk History
+        $asset_lama = $this->db->get_where('mst_asset', ['asset_id' => $input['asset_id']])->row();
+        $nopol_lama = isset($asset_lama->nopol) ? $asset_lama->nopol : null; // Asumsi field nopol ada di mst_asset atau null
+
+        $nopol_baru = $nopol_lama;
+        if ($input['pajak_jenis'] == '5_TAHUNAN' && !empty($input['nopol_baru'])) {
+            $nopol_baru = strtoupper($input['nopol_baru']);
+        }
+
+        return [
+            'transaksi_no'    => $this->model->get_auto_number($tgl_bayar),
+            'transaksi_tgl'   => $tgl_bayar,
+            'jatuh_tempo_tgl' => $next_due,
+            'asset_id'        => $input['asset_id'],
+            'pajak_jenis'     => $input['pajak_jenis'],
+            'nopol_lama'      => $nopol_lama,
+            'nopol_baru'      => $nopol_baru,
+            'nominal_pokok'   => $pokok,
+            'nominal_denda'   => $denda,
+            'nominal_total'   => $pokok + $denda,
+            'transaksi_ket'   => $input['transaksi_ket'],
+            'bukti_file'      => $file_name,
+            'created_by'      => $this->session->userdata('user_id'),
+            'created_at'      => date('Y-m-d H:i:s'),
+            'active_st'       => 1,
+            'deleted_st'      => 0
+        ];
+    }
+
+    private function _prepare_asset_update($input, $dates)
+    {
+        $data = [
+            'tgl_pajak_tahunan' => $dates['next_due'],
+            'updated_at'        => date('Y-m-d H:i:s')
+        ];
+
+        if ($input['pajak_jenis'] == '5_TAHUNAN') {
+            $data['tgl_pajak_plat'] = $dates['next_plat'];
+            // Update Nopol di Master jika ada perubahan
+            /* Note: Jika Nopol disimpan di dat_asset_value (bukan field mst_asset), 
+               logika update ini harus disesuaikan di Model. 
+               Disini saya asumsikan update tanggal saja di master. */
+        }
+
+        return $data;
+    }
+
+    private function _convert_date($date_raw)
+    {
+        if (empty($date_raw)) return date('Y-m-d');
+        if (strpos($date_raw, '-') !== false) {
+            $parts = explode('-', $date_raw);
+            if (count($parts) == 3 && strlen($parts[2]) == 4) {
+                return date('Y-m-d', strtotime($date_raw));
+            }
+        }
+        return $date_raw;
     }
 }

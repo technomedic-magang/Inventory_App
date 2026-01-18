@@ -28,6 +28,7 @@
                 <thead>
                   <tr>
                     <th class="text-center">No</th>
+                    <th class="text-center">Aksi</th>
                     <th>Kode Aset</th>
                     <th>Kategori</th>
                     <th>Nama Kendaraan</th>

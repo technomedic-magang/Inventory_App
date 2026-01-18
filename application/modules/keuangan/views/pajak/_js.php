@@ -8,15 +8,18 @@
       "processing": true,
       "serverSide": true,
       "ordering": true,
-      "order": [ [2, 'desc'] ], 
+      "order": [ [7, 'desc'] ], // Urut Tgl Bayar (Kolom ke-7)
       "ajax": {
-        "url": "<?= site_url('keuangan/pajak/ajax_datatables?n=' . _get('n')) ?>",
-        "type": "POST"
+        "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
+        "type": "POST",
+        "data": function (d) {
+            // CSRF Token
+            d.<?= $this->security->get_csrf_token_name() ?> = '<?= $this->security->get_csrf_hash() ?>';
+        }
       },
       "deferRender": true,
       "pageLength": 25,
       "columns": [
-        // 0. NO
         {
           "data": "pajak_id",
           "sortable": false,
@@ -25,61 +28,53 @@
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
-        // 1. AKSI
+        // AKSI
+
+
         {
           "data": "<?= $this->pk_id ?>",
-          "className": "text-left",
+          "className": "text-center",
           "sortable": false,
           "render": function(data, type, row, meta) {
-            var uri_edit = '<?= site_url("keuangan/pajak/form_modal/") ?>' + data;
-            var uri_delete = '<?= site_url("keuangan/pajak/delete/") ?>' + data;
-            return `<div class="btn-list btn-sm flex-nowrap">
-                      <div class="dropdown">
-                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">Aksi</button>
-                        <div class="dropdown-menu">
-                          <a class="dropdown-item p-1" href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_edit}', size: 'modal-lg'})"><i class="fas fa-edit me-1"></i> Ubah</a>
-                          <a class="dropdown-item p-1 text-danger" href="javascript:void(0)" onclick="_delete('${uri_delete}')"><i class="fas fa-trash me-1"></i> Hapus</a>
-                        </div>
+            var uri_delete = '<?= $this->uri . "/delete/" ?>' + data;
+            
+            // Hanya tombol Hapus (Edit dikunci sesuai Controller)
+            return `<div class="dropdown">
+                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
+                      </button>
+                      <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="_delete('${uri_delete}')">
+                            <i class="fas fa-trash me-2"></i> Hapus
+                        </a>
                       </div>
                     </div>`;
           }
         },
-
-        // 2. KODE ASET
+        // KODE
         {
           "data": "asset_kd",
-          "className": "text-left fw-bold"
+          "className": "text-start fw-bold"
         },
-
-        // 4. NO TRANSAKSI & ASET
+        // INFO TRANSAKSI
         { 
             "data": "transaksi_no", 
-            "className": "text-left",
+            "className": "text-start",
             "render": function(data, type, row) {
-                return `<div class="fw-bold">${data}</div>
-                        <div class="small text-muted">${row.asset_nm}</div>`;
+                return `<div class="fw-bold text-dark">${data}</div>
+                        <div class="small text-muted text-truncate" style="max-width:200px;">${row.asset_nm}</div>`;
             }
         },
-        
-        // 3 KATEGORI
-        {
-          "data": "kategori_nm",
-          "className": "text-left"
-        },
-
-        // --------------------------
-        // 6. PLAT NOMOR (Mengambil alias 'plat_nomor' dari Model)
+        // KATEGORI
+        { "data": "kategori_nm" },
+        // PLAT NOMOR
         { 
             "data": "plat_nomor", 
-            "className": "fw-bold text-left",
+            "className": "fw-bold text-start",
             "render": function(data) {
-                // Tampilkan data (Nopol Master atau Nopol Baru)
-                return (data && data !== '-') ? data : '<span class="text-muted">-</span>';
+                return (data && data !== '-') ? `<span class="badge bg-dark-lt">${data}</span>` : '<span class="text-muted">-</span>';
             }
         },
-        // --------------------------
-        
-        // 7. JENIS PAJAK
+        // JENIS PAJAK
         { 
             "data": "pajak_jenis", 
             "className": "text-end",
@@ -89,7 +84,7 @@
                 return `<span class="badge bg-${color}-lt">${label}</span>`;
             }
         },
-        // 5. TGL BAYAR
+        // TGL BAYAR
         { 
             "data": "transaksi_tgl", 
             "className": "text-end",
@@ -97,7 +92,7 @@
                 return data ? data.split('-').reverse().join('-') : '-';
             }
         },
-        // 8. BERLAKU SAMPAI
+        // BERLAKU SAMPAI
         { 
             "data": "jatuh_tempo_tgl", 
             "className": "text-end",
@@ -107,10 +102,10 @@
                 return `<span class="text-success fw-bold">${dateStr}</span>`;
             }
         },
-        // 9. TOTAL BAYAR
+        // TOTAL BAYAR
         { 
             "data": "nominal_total", 
-            "className": "text-end fw-bold",
+            "className": "text-end fw-bold text-dark",
             "render": function(data) {
                 return 'Rp ' + parseFloat(data).toLocaleString('id-ID');
             }
