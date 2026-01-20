@@ -7,6 +7,10 @@ class M_elektronik extends CI_Model
 
     public function load_datatables()
     {
+        // [STANDAR] Header JSON
+        if (ob_get_length()) ob_clean(); 
+        header('Content-Type: application/json');
+
         $query = "
             SELECT 
                 a.asset_id,
@@ -17,7 +21,6 @@ class M_elektronik extends CI_Model
                 a.asset_ket,
                 k.kategori_nm,
                 
-                -- [BARU]
                 a.asset_thn_beli,
                 a.asset_bln_beli,
                 
@@ -29,9 +32,11 @@ class M_elektronik extends CI_Model
 
             FROM mst_asset a
             
+            -- Filter Kategori 'EL' (Elektronik)
             JOIN mst_kategori k ON a.kategori_id = k.kategori_id 
                  AND k.kategori_kd = 'EL'
             
+            -- JOIN Atribut Kustom
             LEFT JOIN mst_kategori_atribut attr_merek ON attr_merek.kategori_id = a.kategori_id AND attr_merek.atribut_label = 'Merek & Seri'
             LEFT JOIN dat_asset_value v_merek ON v_merek.asset_id = a.asset_id AND v_merek.atribut_id = attr_merek.atribut_id
 
@@ -46,8 +51,17 @@ class M_elektronik extends CI_Model
         ";
 
         $where = ['a.deleted_st'  => 0];
-        // Tambahkan pencarian tahun
-        $search = ['a.asset_kd', 'a.asset_nm', 'v_merek.value_isi', 'v_ruang.value_isi', 'v_lantai.value_isi', 'a.asset_thn_beli'];
+        
+        // Pencarian Global
+        $search = [
+            'a.asset_kd', 
+            'a.asset_nm', 
+            'v_merek.value_isi', 
+            'v_ruang.value_isi', 
+            'v_lantai.value_isi', 
+            'a.asset_thn_beli'
+        ];
+        
         $isWhere = null;
 
         DB::datatables_query($query, $search, $where, $isWhere);
@@ -59,6 +73,7 @@ class M_elektronik extends CI_Model
                         ->from('dat_asset_value v')
                         ->join('mst_kategori_atribut attr', 'v.atribut_id = attr.atribut_id')
                         ->where('v.asset_id', $asset_id)
+                        ->order_by('attr.atribut_urutan', 'ASC')
                         ->get()->result_array();
     }
 }

@@ -26,7 +26,8 @@
                 <table class="table table-vcenter card-table table-striped table-sm text-nowrap" id="datatable-main" width="100%">
                   <thead>
                     <tr>
-                      <th class="text-center">No</th>
+                      <th width="20">No</th>
+                      <th width="40">Aksi</th>
                       <th>Kode Barang</th>
                       <th>Kategori</th>
                       <th>Nama Barang</th>

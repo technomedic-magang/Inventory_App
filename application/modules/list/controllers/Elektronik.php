@@ -3,31 +3,48 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Elektronik extends MY_Controller
 {
+    // Konfigurasi Path Standar
+    protected $view_path = 'list/list_elektronik/';
+    protected $uri_path  = 'list/elektronik';
+
     public function __construct()
     {
         parent::__construct();
-        // Load model baru
         _models(['list/m_elektronik']); 
-        // Set path view baru
-        $this->template = 'list/list_elektronik/'; 
+        
+        $this->model = $this->m_elektronik;
+        // Full URL untuk View/JS
+        $this->uri = site_url($this->uri_path); 
     }
 
     public function index()
     {
-        $this->render($this->template . 'index');
+        $this->render($this->view_path . 'index');
     }
 
     public function ajax_datatables()
     {
-        $this->m_elektronik->load_datatables();
+        $this->model->load_datatables();
     }
 
-    // Modal detail (standar)
     public function detail_modal($id = null)
     {
-        $d['main'] = DB::get('mst_asset', ['asset_id' => $id]);
-        $d['detail_kustom'] = $this->m_elektronik->get_detail_kustom($id);
-        $d['id_asset'] = $id;
-        $this->load->view($this->template . 'detail_modal', $d);
+        if (empty($id)) {
+            echo '<div class="alert alert-danger">ID tidak ditemukan.</div>';
+            return;
+        }
+
+        $data['main'] = DB::get('mst_asset', ['asset_id' => $id]);
+        
+        if (!$data['main']) {
+            echo '<div class="alert alert-warning">Data aset tidak ditemukan.</div>';
+            return;
+        }
+
+        $data['detail_kustom'] = $this->model->get_detail_kustom($id);
+        $data['id_asset'] = $id;
+        
+        // Render menggunakan standar render()
+        $this->render($this->view_path . 'detail_modal', $data);
     }
 }

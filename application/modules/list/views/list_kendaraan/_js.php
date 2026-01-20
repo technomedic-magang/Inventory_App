@@ -9,20 +9,16 @@
       "serverSide": true,
       "ordering": true,
       "order": [[2, 'asc']], // Urut berdasarkan Kode Aset (Kolom index 2)
-      "scrollX": true, 
       "ajax": {
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
         "type": "POST",
         "data": function(d) {
             d.<?= $this->security->get_csrf_token_name() ?> = '<?= $this->security->get_csrf_hash() ?>';
-        },
-        "error": function(xhr, error, code) {
-            console.log(xhr.responseText);
         }
       },
       "deferRender": true,
-      "aLengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
-      "pageLength": 25,
+      "aLengthMenu": _datatableLengthMenu,
+      "pageLength": 500,
       "columns": [
         // 0. NO
         {

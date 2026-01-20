@@ -6,7 +6,7 @@
       <div class="row align-items-center">
         <div class="col">
           <div class="page-pretitle">Laporan Perbaikan Aset</div>
-          <h2 class="page-title">Perbaikan & Tiket Keluhan</h2>
+          <h2 class="page-title"></i> Perbaikan & Tiket Keluhan</h2>
         </div>
         <div class="col-auto ms-auto d-print-none">
           <div class="btn-list">

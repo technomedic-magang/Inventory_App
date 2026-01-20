@@ -147,7 +147,7 @@ class Perbaikan_aset extends MY_Controller
         // =========================================================================
 
         $created_at = !empty($d['created_at']) ? $this->_convert_date($d['created_at']) : date('Y-m-d');
-        $created_at .= ' ' . date('H:i:s');
+        $created_at .= ' ' . date('H:i:s'); 
 
         $km_saat_ini = isset($d['kilometer_saat_ini']) ? str_replace('.', '', $d['kilometer_saat_ini']) : NULL;
         $km_next     = isset($d['kilometer_berikutnya']) ? str_replace('.', '', $d['kilometer_berikutnya']) : NULL;

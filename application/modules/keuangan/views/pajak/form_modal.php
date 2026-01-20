@@ -23,10 +23,10 @@ foreach($list_asset as $row) {
 }
 ?>
 
-<form id="form" action="<?= $form_act ?>" method="post" enctype="multipart/form-data" autocomplete="off">
+<form id="form" action="<?= $form_act ?>" method="post" autocomplete="off" enctype="multipart/form-data">
     <div class="card-body">
-        
-        <h4 class="text-primary mb-3">Input Pembayaran Pajak</h4>
+
+        <h4 class="text-primary mb-3">Informasi Pembayaran Pajak</h4>
 
         <div class="mb-3 p-2 border rounded bg-light">
             <label class="form-label required fw-bold text-dark">Kategori Aset</label>

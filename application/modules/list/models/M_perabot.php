@@ -7,7 +7,10 @@ class M_perabot extends CI_Model
 
     public function load_datatables()
     {
-        // menggabungkan data Aset, Atribut Kustom, dan Lokasi
+        // [STANDAR] Header JSON
+        if (ob_get_length()) ob_clean(); 
+        header('Content-Type: application/json');
+
         $query = "
             SELECT 
                 a.asset_id,
@@ -16,9 +19,13 @@ class M_perabot extends CI_Model
                 a.asset_kondisi,
                 a.active_st,
                 a.asset_ket,
+                -- Kolom Tahun dan Bulan Beli
+                a.asset_thn_beli,
+                a.asset_bln_beli,
+                
                 k.kategori_nm,
                 
-                -- Ambil Atribut Kustom
+                -- Atribut Kustom
                 v_merek.value_isi as merek_spek,
                 v_tgl.value_isi as tgl_pembelian_kustom,
                 v_ruang.value_isi as ruangan,
@@ -64,19 +71,29 @@ class M_perabot extends CI_Model
         ";
 
         $where = ['a.deleted_st'  => 0];
-        $search = ['a.asset_kd', 'a.asset_nm', 'v_merek.value_isi', 'v_ruang.value_isi', 'pg.pegawai_nm'];
+        
+        // Pencarian data
+        $search = [
+            'a.asset_kd', 
+            'a.asset_nm', 
+            'v_merek.value_isi', 
+            'v_ruang.value_isi', 
+            'pg.pegawai_nm',
+            'a.asset_thn_beli'
+        ];
+        
         $isWhere = null;
 
         DB::datatables_query($query, $search, $where, $isWhere);
     }
 
-    // Fungsi detail (standar)
     public function get_detail_kustom($asset_id)
     {
         return $this->db->select('v.value_isi, attr.atribut_label')
                         ->from('dat_asset_value v')
                         ->join('mst_kategori_atribut attr', 'v.atribut_id = attr.atribut_id')
                         ->where('v.asset_id', $asset_id)
+                        ->order_by('attr.atribut_urutan', 'ASC')
                         ->get()->result_array();
     }
 }

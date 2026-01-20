@@ -1,6 +1,7 @@
 <script type="text/javascript">
   var tabel = null;
 
+  // Helper: Format Tanggal (YYYY-MM-DD to DD/MM/YYYY)
   function formatTglIndo(rawDate) {
       if(!rawDate || rawDate === '0000-00-00') return '-';
       var date = new Date(rawDate);
@@ -18,67 +19,94 @@
       "processing": true,
       "serverSide": true,
       "ordering": true,
-      "order": [[1, 'asc']], 
-      "scrollX": true, 
+      "order": [[2, 'asc']], // Urut berdasarkan Kode Aset (Index 2)
       "ajax": {
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
-        "type": "POST"
+        "type": "POST",
+        "data": function (d) {
+            // [PENTING] CSRF Token untuk keamanan
+            d.<?= $this->security->get_csrf_token_name() ?> = '<?= $this->security->get_csrf_hash() ?>';
+        }
       },
       "deferRender": true,
       "aLengthMenu": _datatableLengthMenu,
       "pageLength": 25,
       "columns": [
+        // 0. NO
         {
-          "data": "<?= $this->pk_id ?>",
+          "data": null,
           "sortable": false,
-          "className": "text-center",
+          "className": "text-start",
           "render": function(data, type, row, meta) {
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
+        // 1. AKSI (DROPDOWN STANDARD)
         { 
-            "data": "asset_kd", 
-            "className": "fw-bold",
+            "data": "asset_id", 
+            "className": "text-center",
+            "sortable": false,
             "render": function(data, type, row) {
-                 var uri_detail = '<?= $this->uri . '/detail_modal/' ?>' + row.asset_id;
-                 return `<a href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_detail}', size: 'modal-lg'})" class="text-primary text-decoration-none" title="Lihat Detail">${data}</a>`;
+                 var uri_detail = '<?= $this->uri . '/detail_modal/' ?>' + data;
+                 
+                 return `
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Aksi
+                      </button>
+                      <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item" href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_detail}', size: 'modal-lg', title: 'Detail Aset'})">
+                            <i class="fas fa-eye me-2"></i> Detail
+                        </a>
+                      </div>
+                    </div>
+                 `;
             }
         },
+        // 2. KODE BARANG (LINK CLICKABLE)
+        { 
+            "data": "asset_kd", 
+            "className": "fw-bold"
+        },
+        // 3. KATEGORI
         { "data": "kategori_nm" },
+        // 4. NAMA BARANG
         { "data": "asset_nm" },
+        // 5. MEREK & TIPE
         { "data": "merek_tipe", "render": function(d){ return d || '-'; } },
+        // 6. KONDISI (BADGE WARNA STANDAR)
         {
           "data": "asset_kondisi",
           "className": "text-center",
           "render": function(data) {
-            var color = (data == 'BAIK') ? 'success' : (data == 'RUSAK') ? 'danger' : 'warning';
+            var color = 'secondary';
+            if(data == 'BAIK') color = 'green';
+            if(data == 'RUSAK') color = 'red';
+            if(data == 'SEDANG') color = 'yellow';
+            
             return `<span class="badge bg-${color}-lt">${data}</span>`;
           }
         },
-
-        // [FIX] KOLOM BULAN BELI
+        // 7. BULAN BELI
         { 
             "data": "asset_bln_beli", 
             "className": "text-center",
             "render": function(data) {
-                var namaBulan = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-                                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                var namaBulan = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
                 var idx = parseInt(data);
                 return (idx && namaBulan[idx]) ? namaBulan[idx] : '-';
             }
         },
-
-        // [FIX] KOLOM TAHUN BELI
+        // 8. TAHUN BELI
         { 
             "data": "asset_thn_beli", 
             "className": "text-center",
-            "render": function(data) {
-                return data || '-';
-            }
+            "render": function(data) { return data || '-'; }
         },
-
+        // 9. KETERANGAN
         { "data": "asset_ket", "render": function(d){ return d || '-'; } },
         
+        // 10. QR CODE
         { 
             "data": "asset_kd", 
             "className": "text-center",

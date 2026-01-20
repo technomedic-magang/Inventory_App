@@ -10,12 +10,10 @@
       "ordering": true,
       "order": [ [6, 'desc'] ], 
       "ajax": {
-        // [SIMPLE URI] Gunakan variabel URI dari Controller
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
         "type": "POST",
         "data": function (d) {
             d.filter_kategori = $('#main_filter_kategori').val(); 
-            // CSRF Token
             d.<?= $this->security->get_csrf_token_name() ?> = '<?= $this->security->get_csrf_hash() ?>';
         }
       },
@@ -29,27 +27,30 @@
                 return meta.row + meta.settings._iDisplayStart + 1;
             }
         },
+        // KOLOM AKSI DROPDOWN
         {
           "data": "<?= $this->pk_id ?>", 
           "sortable": false,
           "className": "text-center", 
           "render": function(data, type, row, meta) {
-            var uri_edit = '<?= $this->uri . '/form_modal/' ?>' + data;
+            var uri_modal = '<?= $this->uri . '/form_modal/' ?>' + data;
             var uri_delete = '<?= $this->uri . '/delete/' ?>' + data;
             
-            // Logika Status: 0=Baru (Boleh Edit/Hapus), Selain itu View Only
+            // Logic: 0=Baru (Boleh Edit/Hapus), Selain itu View Only
+            var menuItems = '';
             if (row.status_tiket == '0') {
-                return '' +
-                  '<div class="dropdown">' +
-                  '  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>' +
-                  '  <div class="dropdown-menu dropdown-menu-end">' +
-                  '    <a class="dropdown-item" href="javascript:void(0)" onclick="_modal(event, {uri: \'' + uri_edit + '\', size: \'modal-lg\'})"><i class="fas fa-edit me-2"></i> Edit</a>' +
-                  '    <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="_delete(\'' + uri_delete + '\')"><i class="fas fa-trash me-2"></i> Hapus</a>' +
-                  '  </div>' +
-                  '</div>';
+                menuItems += `<a class="dropdown-item" href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_modal}', size: 'modal-lg', title: 'Edit Tiket'})"><i class="fas fa-edit me-2"></i> Edit</a>`;
+                menuItems += `<a class="dropdown-item text-danger" href="javascript:void(0)" onclick="_delete('${uri_delete}')"><i class="fas fa-trash me-2"></i> Hapus</a>`;
             } else {
-                return '<button class="btn btn-sm btn-icon btn-secondary" title="Lihat Detail" onclick="_modal(event, {uri: \'' + uri_edit + '\', size: \'modal-lg\'})"><i class="fas fa-eye"></i></button>';
+                menuItems += `<a class="dropdown-item" href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_modal}', size: 'modal-lg', title: 'Detail Tiket'})"><i class="fas fa-eye me-2"></i> Detail</a>`;
             }
+
+            return `
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
+                  <div class="dropdown-menu dropdown-menu-end">${menuItems}</div>
+                </div>
+            `;
           }
         },
         {
@@ -69,9 +70,7 @@
           "render": function(data, type, row) {
               var nama = data || '-';
               var merk = row.merk ? ' <span class="text-muted small">(' + row.merk + ')</span>' : '';
-              var html = '<div class="fw-bold">' + nama + merk + '</div>';
-              if(row.spesifikasi) html += '<div class="small text-muted text-truncate" style="max-width:200px;">' + row.spesifikasi + '</div>';
-              return html;
+              return '<div class="fw-bold">' + nama + merk + '</div>';
           }
         },
         { 

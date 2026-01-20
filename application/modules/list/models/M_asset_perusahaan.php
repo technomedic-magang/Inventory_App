@@ -7,10 +7,10 @@ class M_asset_perusahaan extends CI_Model
 
     public function load_datatables()
     {
-        // ... (KODE LOAD DATATABLES TETAP SAMA SEPERTI SEBELUMNYA) ...
-        // ... Pastikan kode load_datatables yang terakhir saya berikan tetap ada di sini ...
-        
-        // 1. Definisikan Query Utama (String SQL)
+        if (ob_get_length()) ob_clean(); 
+        header('Content-Type: application/json');
+
+        // 1. Query Utama (Complex Join untuk standarisasi nama & lokasi)
         $query = "
             SELECT 
                 a.asset_id,
@@ -19,7 +19,7 @@ class M_asset_perusahaan extends CI_Model
                 k.kategori_nm,
                 k.kategori_kd,
                 
-                -- STANDARISASI TAHUN
+                -- LOGIKA TAHUN: Prioritas thn_beli -> thn_custom -> strip
                 COALESCE(
                     NULLIF(a.asset_thn_beli, ''), 
                     NULLIF(a.asset_thn_beli, '0'), 
@@ -27,7 +27,7 @@ class M_asset_perusahaan extends CI_Model
                     '-'
                 ) as tahun,
 
-                -- STANDARISASI NAMA BARANG & SPESIFIKASI
+                -- LOGIKA NAMA LENGKAP: Nama Aset + Merek/Plat/Alamat
                 CONCAT(
                     a.asset_nm,
                     CASE 
@@ -43,7 +43,7 @@ class M_asset_perusahaan extends CI_Model
                     END
                 ) as nama_lengkap,
 
-                -- STANDARISASI LOKASI / PENANGGUNG JAWAB
+                -- LOGIKA LOKASI / PJ: Cek Peminjam -> Alamat Gedung -> Ruang -> Gudang
                 CASE
                     WHEN tp.pemakaian_id IS NOT NULL THEN 
                         CONCAT('Dipakai: ', pg.pegawai_nm)
@@ -61,6 +61,7 @@ class M_asset_perusahaan extends CI_Model
             FROM mst_asset a
             JOIN mst_kategori k ON a.kategori_id = k.kategori_id
 
+            -- JOIN ATRIBUT DINAMIS (Merek, Nopol, Alamat, Ruang, Lantai, Tanggal)
             LEFT JOIN mst_kategori_atribut attr_merek ON attr_merek.kategori_id = a.kategori_id 
                  AND (attr_merek.atribut_label LIKE 'Merek%' OR attr_merek.atribut_label LIKE 'Type%')
             LEFT JOIN dat_asset_value v_merek ON v_merek.asset_id = a.asset_id AND v_merek.atribut_id = attr_merek.atribut_id
@@ -85,6 +86,7 @@ class M_asset_perusahaan extends CI_Model
                  AND (attr_tgl.atribut_label LIKE 'Tgl%' OR attr_tgl.atribut_label LIKE 'Tanggal%')
             LEFT JOIN dat_asset_value v_tgl ON v_tgl.asset_id = a.asset_id AND v_tgl.atribut_id = attr_tgl.atribut_id
 
+            -- JOIN TRANSAKSI (Peminjaman & Stok)
             LEFT JOIN trx_pemakaian_detail tpd ON tpd.asset_id = a.asset_id AND tpd.kembali_qty < tpd.pemakaian_qty
             LEFT JOIN trx_pemakaian tp ON tpd.pemakaian_id = tp.pemakaian_id AND tp.pemakaian_sts = 'OPEN'
             LEFT JOIN mst_pegawai pg ON tp.pegawai_id = pg.pegawai_id
@@ -93,16 +95,15 @@ class M_asset_perusahaan extends CI_Model
             LEFT JOIN mst_gudang g ON ds.gudang_id = g.gudang_id
         ";
 
-        // 2. Siapkan Array WHERE Dasar
         $where = ['a.deleted_st' => 0];
 
-        // 3. Masukkan Filter Kategori
+        // Filter Kategori
         $filter_kategori = $this->input->post('filter_kategori');
         if (!empty($filter_kategori)) {
             $where['a.kategori_id'] = $filter_kategori;
         }
 
-        // 4. Kolom Pencarian
+        // Pencarian Global
         $search = [
             'a.asset_kd', 
             'a.asset_nm', 
@@ -127,13 +128,10 @@ class M_asset_perusahaan extends CI_Model
                         ->get()->result_array();
     }
 
-    // --- [INI FUNGSI YANG HILANG SEBELUMNYA, WAJIB DITAMBAHKAN] ---
     public function get_all_kategori() 
     {
-        return $this->db->where('deleted_st', 0)
-                        ->where('active_st', 1)
+        return $this->db->where(['deleted_st'=>0, 'active_st'=>1])
                         ->order_by('kategori_nm', 'ASC')
-                        ->get('mst_kategori')
-                        ->result_array();
+                        ->get('mst_kategori')->result_array();
     }
 }

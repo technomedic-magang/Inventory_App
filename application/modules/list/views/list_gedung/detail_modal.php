@@ -1,80 +1,90 @@
 <?php if (empty($main)): ?>
-    <div class="modal-header">
-        <h5 class="modal-title text-danger">Error Data</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
-    <div class="modal-body text-center">
-        <div class="text-danger mb-3">
-            <i class="fas fa-exclamation-circle fa-3x"></i>
-        </div>
-        <p>Data aset tidak ditemukan atau sudah dihapus.</p>
-        <p class="text-muted small">ID Aset: <?= $id_asset ?? 'Kosong' ?></p>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+    <div class="modal-body text-center text-danger">
+        <i class="fas fa-exclamation-circle fa-2x mb-2"></i><br>
+        Data tidak ditemukan atau sudah dihapus.
     </div>
     <?php return; ?>
 <?php endif; ?>
 
-<div class="modal-header">
-    <h5 class="modal-title">Detail Aset: <?= $main['asset_nm'] ?? '-' ?></h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
 <div class="modal-body">
+    
+    <div class="d-flex align-items-center mb-3">
+        <div class="me-3">
+            <span class="avatar avatar-lg rounded bg-teal-lt">
+                <i class="fas fa-building fa-lg"></i>
+            </span>
+        </div>
+        <div>
+            <h3 class="m-0 text-primary"><?= $main['asset_nm'] ?></h3>
+            <div class="text-muted small">
+                Kode Aset: <strong><?= $main['asset_kd'] ?></strong>
+            </div>
+        </div>
+        <div class="ms-auto">
+            <?php 
+                $kondisi = $main['asset_kondisi'];
+                $bg = ($kondisi=='BAIK')?'success':(($kondisi=='RUSAK')?'danger':'warning');
+            ?>
+            <span class="badge bg-<?= $bg ?>"><?= $kondisi ?></span>
+        </div>
+    </div>
+
+    <div class="border-dotted my-3"></div>
+
     <div class="row">
-        <div class="col-md-6">
-            <h4 class="text-primary mb-3">Informasi Umum</h4>
+        <div class="col-md-5 border-end">
+            <h4 class="text-muted text-uppercase small font-weight-bold mb-3">Informasi Umum</h4>
             <table class="table table-sm table-borderless">
                 <tr>
-                    <td class="text-muted" width="40%">Kode Aset</td>
-                    <td class="fw-bold"><?= $main['asset_kd'] ?? '-' ?></td>
+                    <td class="text-muted" width="40%">Kode System</td>
+                    <td class="fw-bold text-dark"><?= $main['asset_kd'] ?></td>
                 </tr>
                 <tr>
-                    <td class="text-muted">Tahun Beli</td>
-                    <td><?= $main['asset_thn_beli'] ?? '-' ?></td>
+                    <td class="text-muted">Tahun Perolehan</td>
+                    <td><?= $main['asset_thn_beli'] ?: '-' ?></td>
                 </tr>
                 <tr>
-                    <td class="text-muted">Harga Perolehan</td>
-                    <td>Rp <?= number_format($main['harga_beli'] ?? 0, 0, ',', '.') ?></td>
-                </tr>
-                <tr>
-                    <td class="text-muted">Kondisi Saat Ini</td>
-                    <td>
-                        <?php 
-                            $kondisi = $main['asset_kondisi'] ?? 'BAIK';
-                            $bg = 'success';
-                            if ($kondisi == 'RUSAK') $bg = 'danger';
-                            if ($kondisi == 'PERBAIKAN') $bg = 'warning';
-                        ?>
-                        <span class="badge bg-<?= $bg ?>-lt">
-                            <?= $kondisi ?>
-                        </span>
-                    </td>
+                    <td class="text-muted">Nilai Aset</td>
+                    <td class="text-blue">Rp <?= number_format($main['harga_beli'], 0, ',', '.') ?></td>
                 </tr>
                 <tr>
                     <td class="text-muted">Keterangan</td>
-                    <td><?= !empty($main['asset_ket']) ? $main['asset_ket'] : '-' ?></td>
+                    <td class=""><?= $main['asset_ket'] ?: '-' ?></td>
                 </tr>
             </table>
         </div>
 
-        <div class="col-md-6">
-            <h4 class="text-primary mb-3">Spesifikasi Detail</h4>
-            <table class="table table-sm table-striped">
-                <?php if(empty($detail_kustom)): ?>
-                    <tr><td class="text-muted text-center fst-italic py-3">Tidak ada detail spesifik.</td></tr>
-                <?php else: ?>
-                    <?php foreach($detail_kustom as $row): ?>
-                    <tr>
-                        <td width="50%" class="fw-bold"><?= $row['atribut_label'] ?></td>
-                        <td><?= $row['value_isi'] ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </table>
+        <div class="col-md-7 ps-md-4">
+            <h4 class="text-muted text-uppercase small font-weight-bold mb-3">Detail Gedung</h4>
+            
+            <?php if(empty($detail_kustom)): ?>
+                <div class="text-center py-4 text-muted bg-light rounded">
+                    <i class="fas fa-info-circle me-1"></i> Belum ada detail spesifik.
+                </div>
+            <?php else: ?>
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-sm table-striped">
+                        <?php foreach($detail_kustom as $row): ?>
+                        <tr>
+                            <td width="45%" class="fw-bold text-muted"><?= $row['atribut_label'] ?></td>
+                            <td class="fw-bold text-dark">
+                                <?php 
+                                    if((stripos($row['atribut_label'], 'tgl') !== false || stripos($row['atribut_label'], 'tanggal') !== false) && !empty($row['value_isi'])) {
+                                        $ts = strtotime($row['value_isi']);
+                                        echo ($ts) ? date('d F Y', $ts) : $row['value_isi'];
+                                    } else {
+                                        echo $row['value_isi'];
+                                    }
+                                ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
 <div class="modal-footer bg-light">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Tutup</button>
 </div>

@@ -6,7 +6,7 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
 <form id="form" action="<?= $form_act ?>" method="post" autocomplete="off" enctype="multipart/form-data">
     <div class="card-body">
         
-        <h4 class="mb-3 text-primary">Informasi Tiket & Aset</h4>
+        <h4 class="text-primary mb-3">Informasi Tiket & Aset</h4>
 
         <div class="alert alert-light border">
             <div class="row">
@@ -150,18 +150,18 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
             </div>
 
         <?php else: ?>
-            <div class="mb-1 row">
+            <div class="mb-2 row">
                 <label class="col-lg-3 col-md-4 col-form-label">Pelapor</label>
-                <div class="col-lg-8 col-md-8">
+                <div class="col-lg-9 col-md-8">
                     <input type="text" class="form-control bg-light" value="<?= $nama_pelapor ?>" readonly>
                 </div>
             </div>
 
             <div class="border-dotted my-3"></div>
             
-            <div class="mb-1 row">
+            <div class="mb-2 row">
                 <label class="col-lg-3 col-md-4 col-form-label">Filter Kategori</label>
-                <div class="col-lg-8 col-md-8">
+                <div class="col-lg-9 col-md-8">
                     <select id="filter_kategori" class="form-select" onchange="filterAssetByKategori()">
                         <option value="">- Tampilkan Semua -</option>
                         <?php foreach($list_kategori as $kat): ?>
@@ -171,9 +171,9 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                 </div>
             </div>
 
-            <div class="mb-1 row">
+            <div class="mb-2 row">
                 <label class="col-lg-3 col-md-4 col-form-label required">Pilih Aset</label>
-                <div class="col-lg-8 col-md-8">
+                <div class="col-lg-9 col-md-8">
                     <select name="asset_id" id="asset_id" class="form-select select2-modal" required onchange="onAssetChange()">
                         <option value="">- Cari Nama / Kode Aset -</option>
                         <?php foreach ($list_asset as $k): ?>
@@ -183,7 +183,6 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                                 
                                 $disabled = ($is_repair && !$is_current) ? 'disabled' : '';
                                 $info_txt = ($is_repair && !$is_current) ? ' (SEDANG DIPERBAIKI)' : '';
-                                
                                 $style    = ($is_repair && !$is_current) ? 'background-color: #fceceb; color: #d63939;' : '';
                             ?>
                             <option value="<?= $k['asset_id'] ?>" 
@@ -203,25 +202,25 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
             <div class="border-dotted my-3"></div>
             <h4 class="mb-3 text-primary">Detail Laporan</h4>
 
-            <div class="mb-1 row">
+            <div class="mb-2 row">
                 <label class="col-lg-3 col-md-4 col-form-label required">Tanggal Lapor</label>
-                <div class="col-lg-8 col-md-8">
+                <div class="col-lg-9 col-md-8">
                     <input type="text" id="created_at" name="created_at" class="form-control datepicker-notauto" 
                            value="<?= (@$main['created_at']) ? date('d-m-Y', strtotime($main['created_at'])) : date('d-m-Y') ?>" 
                            required placeholder="dd-mm-yyyy">
                 </div>
             </div>
 
-            <div class="mb-1 row">
+            <div class="mb-2 row">
                 <label class="col-lg-3 col-md-4 col-form-label required">Deskripsi Keluhan</label>
-                <div class="col-lg-8 col-md-8">
+                <div class="col-lg-9 col-md-8">
                     <textarea name="keluhan_deskripsi" class="form-control" rows="3" required placeholder="Jelaskan detail kerusakan..."><?= @$main['keluhan_deskripsi'] ?></textarea>
                 </div>
             </div>
 
-            <div class="mb-1 row">
+            <div class="mb-2 row">
                 <label class="col-lg-3 col-md-4 col-form-label">Foto Bukti</label>
-                <div class="col-lg-8 col-md-8">
+                <div class="col-lg-9 col-md-8">
                     <input type="file" name="keluhan_foto" class="form-control" accept="image/*">
                     <?php if(!empty($main['keluhan_foto'])): ?>
                         <small class="text-success d-block mt-1">File tersimpan: <?= $main['keluhan_foto'] ?></small>
@@ -229,13 +228,30 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                 </div>
             </div>
 
+            <div id="area-ac" class="d-none mt-3">
+                <div class="mb-2 row">
+                    <label class="col-lg-3 col-md-4 col-form-label required">Jenis Perawatan AC</label>
+                    <div class="col-lg-9 col-md-8">
+                        <select name="jenis_perawatan_ac" id="jenis_perawatan_ac" class="form-select form-select-sm">
+                            <option value="">-- Pilih Jenis --</option>
+                            <option value="Cuci AC">Cuci AC (Cleaning)</option>
+                            <option value="Isi Freon">Isi Freon</option>
+                            <option value="Cuci + Isi Freon">Cuci + Isi Freon</option>
+                            <option value="Perbaikan Sparepart">Perbaikan / Ganti Sparepart</option>
+                            <option value="Bongkar Pasang">Bongkar Pasang</option>
+                            <option value="Pengecekan">Pengecekan Rutin</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div id="area-kendaraan" class="d-none">
                 <div class="border-dotted my-3"></div>
                 <h4 class="mb-3 text-warning"><i class="fas fa-car me-2"></i>Data Khusus Kendaraan</h4>
                 
-                <div class="mb-1 row">
+                <div class="mb-2 row">
                     <label class="col-lg-3 col-md-4 col-form-label">Update Odometer?</label>
-                    <div class="col-lg-8 col-md-8">
+                    <div class="col-lg-9 col-md-8">
                         <select id="jenis_perbaikan_km" class="form-select form-select-sm" onchange="toggleFormKM()">
                             <option value="1">Ya (Service Rutin / Ganti Oli)</option>
                             <option value="0">Tidak (Ganti Sparepart / Ban / Body)</option>
@@ -247,9 +263,9 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                     </div>
                 </div>
 
-                <div class="mb-1 row">
+                <div class="mb-2 row">
                     <label class="col-lg-3 col-md-4 col-form-label required-km">KM Saat Ini</label>
-                    <div class="col-lg-8 col-md-8">
+                    <div class="col-lg-9 col-md-8">
                         <div class="input-group">
                             <input type="text" id="kilometer_saat_ini" name="kilometer_saat_ini" 
                                    class="form-control number-separator" 
@@ -260,7 +276,7 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                     </div>
                 </div>
 
-                <div class="mb-1 row" id="row_estimasi_next">
+                <div class="mb-2 row" id="row_estimasi_next">
                     <label class="col-lg-3 col-md-4 col-form-label text-muted">Estimasi Service Selanjutnya</label>
                     
                     <div class="col-lg-4 col-md-4">
@@ -273,7 +289,7 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
                         <small class="text-muted">*Auto (+3 Bulan)</small>
                     </div>
 
-                    <div class="col-lg-4 col-md-4">
+                    <div class="col-lg-5 col-md-4">
                         <div class="input-group input-group-flat">
                             <span class="input-group-text">KM</span>
                             <input type="text" id="kilometer_berikutnya" name="kilometer_berikutnya" 
@@ -444,14 +460,29 @@ $is_readonly = ($id && @$main['status_tiket'] != 0);
     }
 
     function cekJenisAset() {
-        var $selectedOption = $('#asset_id').find('option:selected');
-        var katKode = $selectedOption.attr('data-kode'); 
+        var $opt = $('#asset_id').find('option:selected');
+        var kode = $opt.data('kode'); 
+        var nama = $opt.text().toUpperCase(); // Ambil teks nama aset
+
+        // 1. Reset Tampilan
+        $('#area-kendaraan').addClass('d-none');
+        $('#area-ac').addClass('d-none');
         
-        if(katKode == 'K2' || katKode == 'K4' || katKode == 'KENDARAAN') {
+        // Reset Input agar tidak terbawa saat ganti aset
+        $('#jenis_perawatan_ac').prop('required', false);
+        $('#kilometer_saat_ini').val('');
+        $('#jenis_perawatan_ac').val('');
+
+        if (!kode) return;
+
+        // 2. Cek Kendaraan
+        if(kode == 'K2' || kode == 'K4' || kode == 'KENDARAAN' || kode == 'MBL' || kode == 'MTR') {
             $('#area-kendaraan').removeClass('d-none');
-        } else {
-            $('#area-kendaraan').addClass('d-none');
-            $('#kilometer_saat_ini').val('');
+        } 
+        // 3. Cek AC (Berdasarkan Kode Kategori atau Nama Aset)
+        else if (kode == 'AC' || kode == 'EL' || nama.indexOf(' AC ') > -1 || nama.indexOf('AIR CONDITIONER') > -1) {
+            $('#area-ac').removeClass('d-none');
+            $('#jenis_perawatan_ac').prop('required', true);
         }
     }
 </script>

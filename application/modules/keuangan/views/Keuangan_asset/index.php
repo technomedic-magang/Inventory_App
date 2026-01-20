@@ -1,19 +1,18 @@
 <?php include('_js.php') ?>
 
 <div class="page-wrapper">
-  
   <div class="page-header d-print-none mt-2">
     <div class="container-xl">
       <div class="row align-items-center">
         <div class="col">
           <div class="page-pretitle">Modul Keuangan</div>
-          <h2 class="page-title">Nilai Kekayaan Aset</h2>
+          <h2 class="page-title"></i> Nilai Kekayaan Aset</h2>
         </div>
         
         <div class="col-auto ms-auto d-print-none">
           <?php if(!$is_closed): ?>
              <button class="btn btn-warning shadow-sm" 
-                onclick="_modal(event, {uri: '<?= $this->uri . "/form_modal_tutup_buku" ?>', size: 'modal-md', title: 'Konfirmasi Tutup Buku'})">
+                onclick="_modal(event, {uri: '<?= $this->uri . '/form_modal_tutup_buku' ?>', size: 'modal-md', title: 'Konfirmasi Tutup Buku'})">
                 <i class="fas fa-lock me-2"></i> Tutup Buku Periode <?= $periode_text ?>
              </button>
           <?php else: ?>
@@ -30,7 +29,6 @@
     <div class="container-xl">
         
         <div class="row row-deck row-cards mb-3">
-            
             <div class="col-sm-6 col-lg-4">
                 <div class="card card-sm border-1 shadow-sm">
                     <div class="card-body">

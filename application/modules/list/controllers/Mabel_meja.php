@@ -3,33 +3,49 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Mabel_meja extends MY_Controller
 {
+    // Konfigurasi Path Standar
+    protected $view_path = 'list/list_mabel_meja/';
+    protected $uri_path  = 'list/mabel_meja';
+
     public function __construct()
     {
         parent::__construct();
         _models(['list/m_mabel_meja']); 
-        $this->template = 'list/list_mabel_meja/'; 
+        
+        $this->model = $this->m_mabel_meja;
+        // Full URL untuk View/JS
+        $this->uri = site_url($this->uri_path); 
     }
 
     public function index()
     {
-        // Judul disesuaikan
-        $this->title = 'Daftar Mebel (Meja)';
-        $this->render($this->template . 'index');
+        $this->render($this->view_path . 'index');
     }
 
     public function ajax_datatables()
     {
-        $this->m_mabel_meja->load_datatables();
+        $this->model->load_datatables();
     }
 
     public function detail_modal($id = null)
     {
-        if (!$this->input->is_ajax_request()) exit('No direct script access allowed');
+        if (empty($id)) {
+            echo '<div class="alert alert-danger">ID tidak ditemukan.</div>';
+            return;
+        }
 
-        $d['main'] = DB::get('mst_asset', ['asset_id' => $id]);
-        $d['detail_kustom'] = $this->m_mabel_meja->get_detail_kustom($id);
-        $d['id_asset'] = $id;
+        // Ambil data utama
+        $data['main'] = DB::get('mst_asset', ['asset_id' => $id]);
+        
+        if (!$data['main']) {
+            echo '<div class="alert alert-warning">Data aset tidak ditemukan.</div>';
+            return;
+        }
 
-        $this->load->view($this->template . 'detail_modal', $d);
+        // Ambil atribut spesifik (Merek, Ruang, Lantai)
+        $data['detail_kustom'] = $this->model->get_detail_kustom($id);
+        $data['id_asset'] = $id;
+        
+        $this->render($this->view_path . 'detail_modal', $data);
     }
 }

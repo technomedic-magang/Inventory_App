@@ -3,29 +3,49 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Perabot extends MY_Controller
 {
+    // Konfigurasi Path Standar
+    protected $view_path = 'list/list_perabot/';
+    protected $uri_path  = 'list/perabot';
+
     public function __construct()
     {
         parent::__construct();
         _models(['list/m_perabot']); 
-        $this->template = 'list/list_perabot/'; 
+        
+        $this->model = $this->m_perabot;
+        // Full URL untuk View/JS
+        $this->uri = site_url($this->uri_path); 
     }
 
     public function index()
     {
-        $this->render($this->template . 'index');
+        $this->render($this->view_path . 'index');
     }
 
     public function ajax_datatables()
     {
-        $this->m_perabot->load_datatables();
+        $this->model->load_datatables();
     }
 
-    // Modal detail (standar)
     public function detail_modal($id = null)
     {
-        $d['main'] = DB::get('mst_asset', ['asset_id' => $id]);
-        $d['detail_kustom'] = $this->m_perabot->get_detail_kustom($id);
-        $d['id_asset'] = $id;
-        $this->load->view($this->template . 'detail_modal', $d);
+        if (empty($id)) {
+            echo '<div class="alert alert-danger">ID tidak ditemukan.</div>';
+            return;
+        }
+
+        // Ambil data utama
+        $data['main'] = DB::get('mst_asset', ['asset_id' => $id]);
+        
+        if (!$data['main']) {
+            echo '<div class="alert alert-warning">Data aset tidak ditemukan.</div>';
+            return;
+        }
+
+        // Ambil atribut spesifik
+        $data['detail_kustom'] = $this->model->get_detail_kustom($id);
+        $data['id_asset'] = $id;
+        
+        $this->render($this->view_path . 'detail_modal', $data);
     }
 }

@@ -8,81 +8,100 @@
       "processing": true,
       "serverSide": true,
       "ordering": true,
-      "order": [[1, 'asc']], 
-      "scrollX": true, 
+      "order": [[2, 'asc']],
       "ajax": {
         "url": "<?= $this->uri . '/ajax_datatables?n=' . _get('n') ?>",
-        "type": "POST"
+        "type": "POST",
+        "data": function (d) {
+            d.<?= $this->security->get_csrf_token_name() ?> = '<?= $this->security->get_csrf_hash() ?>';
+        }
       },
       "deferRender": true,
-      "aLengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
-      "pageLength": 10,
+      "aLengthMenu": _datatableLengthMenu,
+      "pageLength": 500,
       "columns": [
         // 0. No
         {
-          "data": "<?= $this->pk_id ?>",
+          "data": null,
           "sortable": false,
           "className": "text-center",
           "render": function(data, type, row, meta) {
             return meta.row + meta.settings._iDisplayStart + 1;
           }
         },
-        // 1. Kode Barang
+        // 1. Aksi (Dropdown)
         { 
-            "data": "asset_kd", 
-            "className": "text-left fw-bold",
+            "data": "asset_id", 
+            "className": "text-center",
+            "sortable": false,
             "render": function(data, type, row) {
-                 var uri_detail = '<?= $this->uri . '/detail_modal/' ?>' + row.asset_id;
-                 return `<a href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_detail}', size: 'modal-lg'})" class="text-primary text-decoration-none" title="Lihat Detail">${data}</a>`;
+                 var uri_detail = '<?= $this->uri . '/detail_modal/' ?>' + data;
+                 
+                 return `
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Aksi
+                      </button>
+                      <div class="dropdown-menu dropdown-menu-end">
+                        <a class="dropdown-item" href="javascript:void(0)" onclick="_modal(event, {uri: '${uri_detail}', size: 'modal-lg', title: 'Detail Aset'})">
+                            <i class="fas fa-eye me-2"></i> Detail
+                        </a>
+                      </div>
+                    </div>
+                 `;
             }
         },
-        // 2. Kategori
-        { "data": "kategori_nm", "className": "text-left" },
-        // 3. Nama Barang
-        { "data": "asset_nm", "className": "text-left" },
-        // 4. Merek/Spek
-        { "data": "merek_spek", "className": "text-left", "render": function(d){ return d || '-'; } },
-        // 5. Kondisi
+        // 2. KODE ASET (LINK)
+        { 
+            "data": "asset_kd", 
+            "className": "fw-bold"
+        },
+        // 3. Kategori
+        { "data": "kategori_nm" },
+        // 4. Nama Barang
+        { "data": "asset_nm" },
+        // 5. Merek/Spek
+        { "data": "merek_spek", "render": function(d){ return d || '-'; } },
+        // 6. Kondisi
         {
           "data": "asset_kondisi",
           "className": "text-center",
           "render": function(data) {
-            var color = (data == 'BAIK') ? 'success' : (data == 'RUSAK') ? 'danger' : 'warning';
-            if (data == 'RUSAK BERAT') color = 'danger';
+            var color = 'secondary';
+            if(data == 'BAIK') color = 'green';
+            if(data == 'RUSAK') color = 'red';
+            if(data == 'RUSAK BERAT') color = 'danger'; // Spesifik Mebel
+            if(data == 'SEDANG' || data == 'PERBAIKAN') color = 'yellow';
             return `<span class="badge bg-${color}-lt">${data}</span>`;
           }
         },
-        // 6. Ruangan
-        { "data": "ruangan", "className": "text-left fw-bold", "render": function(d){ return d || '-'; } },
-        // 7. Lantai
-        { "data": "lantai", "className": "text-left", "render": function(d){ return d || '-'; } },
-
-        // 8. KOLOM BULAN BELI
+        // 7. Ruangan
+        { "data": "ruangan", "className": "fw-bold", "render": function(d){ return d || '-'; } },
+        // 8. Lantai
+        { "data": "lantai", "render": function(d){ return d || '-'; } },
+        
+        // 9. Bulan Beli
         { 
             "data": "asset_bln_beli", 
             "className": "text-center",
             "render": function(data) {
-                var namaBulan = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-                                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-                // ParseInt untuk memastikan tipe data angka
+                var namaBulan = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
                 var idx = parseInt(data);
                 return (idx && namaBulan[idx]) ? namaBulan[idx] : '-';
             }
         },
 
-        // 9. KOLOM TAHUN BELI
+        // 10. Tahun Beli
         { 
             "data": "asset_thn_beli", 
             "className": "text-center",
-            "render": function(data) {
-                return data || '-';
-            }
+            "render": function(data) { return data || '-'; }
         },
         
-        // 10. Keterangan
-        { "data": "asset_ket", "className": "text-left", "render": function(d){ return d || '-'; } },
+        // 11. Keterangan
+        { "data": "asset_ket", "render": function(d){ return d || '-'; } },
 
-        // 11. QR Code
+        // 12. QR Code
         { 
             "data": "asset_kd", 
             "className": "text-center",
@@ -95,7 +114,7 @@
                 var finalUrl = baseUrl + encodeURIComponent(qrString);
 
                 return `<a href="${finalUrl}" target="_blank" class="btn btn-sm btn-ghost-dark btn-icon" title="Cetak QR">
-                          <i class="fas fa-qrcode fa-lg"></i>
+                          <i class="fas fa-qrcode"></i>
                         </a>`;
             }
         },

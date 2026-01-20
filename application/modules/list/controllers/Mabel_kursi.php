@@ -3,29 +3,49 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Mabel_kursi extends MY_Controller
 {
+    // Konfigurasi Path Standar
+    protected $view_path = 'list/list_mabel_kursi/';
+    protected $uri_path  = 'list/mabel_kursi';
+
     public function __construct()
     {
         parent::__construct();
         _models(['list/m_mabel_kursi']); 
-        $this->template = 'list/list_mabel_kursi/'; 
+        
+        $this->model = $this->m_mabel_kursi;
+        // Full URL untuk View/JS
+        $this->uri = site_url($this->uri_path); 
     }
 
     public function index()
     {
-        $this->render($this->template . 'index');
+        $this->render($this->view_path . 'index');
     }
 
     public function ajax_datatables()
     {
-        $this->m_mabel_kursi->load_datatables();
+        $this->model->load_datatables();
     }
 
-    // Modal detail (standar)
     public function detail_modal($id = null)
     {
-        $d['main'] = DB::get('mst_asset', ['asset_id' => $id]);
-        $d['detail_kustom'] = $this->m_mabel_kursi->get_detail_kustom($id);
-        $d['id_asset'] = $id;
-        $this->load->view($this->template . 'detail_modal', $d);
+        if (empty($id)) {
+            echo '<div class="alert alert-danger">ID tidak ditemukan.</div>';
+            return;
+        }
+
+        // Ambil data utama
+        $data['main'] = DB::get('mst_asset', ['asset_id' => $id]);
+        
+        if (!$data['main']) {
+            echo '<div class="alert alert-warning">Data aset tidak ditemukan.</div>';
+            return;
+        }
+
+        // Ambil atribut spesifik (Merek, Ruang, Lantai)
+        $data['detail_kustom'] = $this->model->get_detail_kustom($id);
+        $data['id_asset'] = $id;
+        
+        $this->render($this->view_path . 'detail_modal', $data);
     }
 }
